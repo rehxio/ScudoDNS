@@ -13,3 +13,5 @@ build-status.txt
 *.keystore
 *.p12
 keystore.properties
+# Carpeta temporal de sincronización
+_to_delete/

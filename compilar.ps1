@@ -27,6 +27,10 @@ function Download($url, $out) {
 }
 
 try {
+    # Restos de sincronizaciones anteriores: se borran solos antes de compilar.
+    $tmpSync = Join-Path $root '_to_delete'
+    if (Test-Path $tmpSync) { Remove-Item $tmpSync -Recurse -Force }
+
     # 1. JDK 17
     $jdk = Join-Path $tool 'jdk'
     if (-not (Test-Path "$jdk\bin\java.exe")) {
