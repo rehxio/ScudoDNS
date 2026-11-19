@@ -21,8 +21,19 @@ import android.content.Context
 import es.rehxio.scudo.update.AppUpdater
 import es.rehxio.scudo.update.UpdateState
 
-/** Lo que hace falta para que Android no cierre la protección. */
-data class KeepAlive(val batteryUnrestricted: Boolean)
+/**
+ * Lo que hace falta para que Android no cierre la protección.
+ * [vpnAlwaysOn] es null si no se puede saber; [autostartDone] solo se usa en Xiaomi, donde no hay forma
+ * de comprobarlo y el usuario lo marca a mano.
+ */
+data class KeepAlive(
+    val batteryUnrestricted: Boolean = true,
+    val vpnAlwaysOn: Boolean? = null,
+    val isXiaomi: Boolean = false,
+    val autostartDone: Boolean = true,
+) {
+    val complete get() = batteryUnrestricted && vpnAlwaysOn != false && (!isXiaomi || autostartDone)
+}
 
 /** Estado de la pestaña Registro. */
 data class LogState(
@@ -60,13 +71,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setVisible(v: Boolean) { visible.value = v }
 
     /** Si Android puede cerrar la app para ahorrar batería (null = no se sabe). */
-    private val _keepAlive = MutableStateFlow(KeepAlive(batteryUnrestricted = true))
+    private val _keepAlive = MutableStateFlow(KeepAlive())
     val keepAlive: StateFlow<KeepAlive> = _keepAlive
 
     private fun keepAliveStatus(): KeepAlive {
         val app = getApplication<Application>()
         val pm = app.getSystemService(PowerManager::class.java)
-        return KeepAlive(batteryUnrestricted = pm?.isIgnoringBatteryOptimizations(app.packageName) ?: true)
+        return KeepAlive(
+            batteryUnrestricted = pm?.isIgnoringBatteryOptimizations(app.packageName) ?: true,
+            vpnAlwaysOn = ScudoVpnService.alwaysOn(),
+            isXiaomi = SystemShortcuts.isXiaomi,
+            autostartDone = app.getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
+                .getBoolean("autostartDone", false),
+        )
+    }
+
+    /** En Xiaomi no se puede comprobar el inicio automático: el usuario confirma que lo ha activado. */
+    fun confirmAutostart() {
+        getApplication<Application>().getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("autostartDone", true).apply()
+        _keepAlive.value = keepAliveStatus()
     }
 
     private val _logState = MutableStateFlow(LogState())

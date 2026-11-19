@@ -31,7 +31,7 @@ Si no, el navegador resuelve los nombres por su cuenta y se salta el filtro.
 
 ## Recomendados
 
-ScudoDNS se mantiene como servicio en primer plano (verás una notificación discreta con el botón **Pausar**) y se vuelve a encender sola al reiniciar. Para pausarla o reanudarla al momento, añade el botón **ScudoDNS** a los ajustes rápidos (desliza desde arriba, pulsa el lápiz de editar y arrástralo al panel). Aun así, algunos fabricantes cierran apps en segundo plano de forma agresiva. Si la protección se apaga sola, haz esto (en la pantalla de Inicio de la app tienes accesos directos):
+ScudoDNS se mantiene como servicio en primer plano (verás una notificación discreta con el botón **Pausar**) y se vuelve a encender sola al reiniciar. Para pausarla o reanudarla al momento, añade el botón **ScudoDNS** a los ajustes rápidos (desliza desde arriba, pulsa el lápiz de editar y arrástralo al panel). Aun así, algunos fabricantes cierran apps en segundo plano de forma agresiva. Si la protección se apaga sola, haz esto (en la pantalla de Inicio, la tarjeta «Que no se cierre nunca» tiene un acceso directo para cada paso y los marca como hechos):
 
 - **VPN siempre activada**: *Ajustes → Redes → VPN → ScudoDNS → engranaje → VPN siempre activada*. Así arranca sola al encender el móvil.
 - **Batería sin restricciones** (Xiaomi, Samsung, Huawei, Oppo): *Ajustes → Apps → ScudoDNS → Ahorro de batería → Sin restricciones*. Evita que el sistema cierre la app.

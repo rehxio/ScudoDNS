@@ -516,7 +516,13 @@ class ScudoVpnService : VpnService() {
         stopSelf()
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        current = this
+    }
+
     override fun onDestroy() {
+        if (current === this) current = null
         stopVpn()
         super.onDestroy()
     }
@@ -536,6 +542,15 @@ class ScudoVpnService : VpnService() {
         private const val DNS_ADDR4 = "10.111.222.2"
         private const val TUN_ADDR6 = "fd00:6573:6375::1"
         private const val DNS_ADDR6 = "fd00:6573:6375::2"
+
+        @Volatile private var current: ScudoVpnService? = null
+
+        /**
+         * Si "VPN siempre activada" está puesta para ScudoDNS. null si no se puede saber
+         * (Android 9 o anterior, o la protección está apagada).
+         */
+        fun alwaysOn(): Boolean? =
+            if (Build.VERSION.SDK_INT >= 29) current?.takeIf { it.tun != null }?.isAlwaysOn else null
 
         private val _running = MutableStateFlow(false)
         val running: StateFlow<Boolean> = _running

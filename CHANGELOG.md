@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 0.8.0
+- La tarjeta **«Que no se cierre nunca»** es ahora una lista de pasos con accesos directos a la opción de ScudoDNS:
+  - **Sin ahorro de batería**: abre directamente el aviso de Android para esta app (y, en Xiaomi, también su ajuste de batería propio).
+  - **Inicio automático** (Xiaomi): abre la ficha de ScudoDNS, donde está el interruptor.
+  - **VPN siempre activada**: abre los ajustes de VPN (Android no permite abrir la ficha de una VPN concreta).
+- Cada paso se marca como hecho al volver a la app, y la tarjeta desaparece cuando están todos. En Android 10 o superior, la app detecta sola si «VPN siempre activada» está puesta.
+
 ## 0.7.1
 - La app ya no descarga ni instala las actualizaciones por su cuenta: el botón **Descargar** abre el APK nuevo en el navegador y se instala tocando la descarga. Así no necesita el permiso de instalar otras apps, que hacía que Google Play Protect la marcara por error como dañina.
 - Se mantiene el aviso de versión nueva en Inicio, la notificación y las opciones de *Acerca de*.
