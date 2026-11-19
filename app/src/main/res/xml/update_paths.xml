@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Única carpeta que se comparte con el instalador de Android: las actualizaciones descargadas. -->
-<paths>
-    <cache-path name="updates" path="updates/" />
-</paths>

@@ -160,7 +160,7 @@
             Ver el código
           </a>
         </div>
-        <p class="meta">Gratis para siempre · Android 8.0 o superior · Unos 2 MB</p>
+        <p class="meta">Gratis para siempre · Android 8.0 o superior · Unos 2 MB<span id="downloads"></span></p>
       </div>
 
       <div class="phone-col">
@@ -317,6 +317,21 @@
       document.getElementById("download-apk").href = apk.browser_download_url;
       const v = (rel.tag_name || "").replace(/^v/, "");
       if (v) document.getElementById("download-label").textContent = "Descargar APK · v" + v;
+    })
+    .catch(() => {});
+
+  // Contador de descargas: suma las descargas del APK de todas las versiones publicadas en GitHub.
+  // Solo se muestra si hay al menos una.
+  fetch("https://api.github.com/repos/rehxio/ScudoDNS/releases?per_page=100")
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(releases => {
+      let total = 0;
+      for (const rel of releases)
+        for (const a of rel.assets || [])
+          if (/\.apk$/i.test(a.name)) total += a.download_count || 0;
+      if (total > 0)
+        document.getElementById("downloads").textContent =
+          " · " + total.toLocaleString("es-ES") + (total === 1 ? " descarga" : " descargas");
     })
     .catch(() => {});
 

@@ -23,8 +23,8 @@ android {
         applicationId = "es.rehxio.scudo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.7.0"
+        versionCode = 9
+        versionName = "0.7.1"
 
         // Enlaces de "Acerca de". El de donaciones se configura en gradle.properties (scudo.donateUrl);
         // si está vacío, la sección de donativos no aparece en la app.

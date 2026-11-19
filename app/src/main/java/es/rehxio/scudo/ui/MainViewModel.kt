@@ -86,15 +86,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _autoUpdate.value = on
     }
     fun checkUpdate() = viewModelScope.launch { AppUpdater.check(getApplication(), notify = false) }
-    fun downloadUpdate() {
-        val s = update.value
-        val info = when (s) { is UpdateState.Available -> s.info; is UpdateState.Failed -> s.info; else -> null } ?: return
-        viewModelScope.launch { AppUpdater.download(getApplication(), info) }
-    }
-    /** Necesita el contexto de la pantalla para abrir el instalador. false = falta conceder el permiso. */
-    fun installUpdate(ctx: Context): Boolean {
-        val s = update.value as? UpdateState.Ready ?: return false
-        return AppUpdater.install(ctx, s.file)
+    fun downloadUpdate(ctx: Context) {
+        val s = update.value as? UpdateState.Available ?: return
+        AppUpdater.openDownload(ctx, s.info)
     }
     fun dismissUpdate() = AppUpdater.dismiss()
 

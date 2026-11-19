@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 0.7.1
+- La app ya no descarga ni instala las actualizaciones por su cuenta: el botón **Descargar** abre el APK nuevo en el navegador y se instala tocando la descarga. Así no necesita el permiso de instalar otras apps, que hacía que Google Play Protect la marcara por error como dañina.
+- Se mantiene el aviso de versión nueva en Inicio, la notificación y las opciones de *Acerca de*.
+
 ## 0.7.0
 ### Actualizaciones desde la app
 - ScudoDNS avisa cuando hay una **versión nueva** (en Inicio y con una notificación discreta) y permite **descargarla e instalarla** con un toque. Android pide confirmación antes de instalar; la primera vez, también permiso para instalar apps desde ScudoDNS.

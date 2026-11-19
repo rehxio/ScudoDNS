@@ -1,9 +1,8 @@
 package es.rehxio.scudo.ui
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,12 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -37,20 +36,13 @@ import androidx.compose.ui.unit.dp
 import es.rehxio.scudo.update.ReleaseInfo
 import es.rehxio.scudo.update.UpdateState
 
-/** Tarjeta en Inicio cuando hay una versión nueva: novedades, descarga con progreso e instalación. */
+/** Tarjeta en Inicio cuando hay una versión nueva: novedades y enlace directo al APK. */
 @Composable
 fun UpdateCard(vm: MainViewModel) {
     val state by vm.update.collectAsState()
-    val info: ReleaseInfo = when (val s = state) {
-        is UpdateState.Available -> s.info
-        is UpdateState.Downloading -> s.info
-        is UpdateState.Ready -> s.info
-        is UpdateState.Failed -> s.info ?: return
-        else -> return
-    }
+    val info: ReleaseInfo = (state as? UpdateState.Available)?.info ?: return
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
-    var needsPermission by remember { mutableStateOf(false) }
     var showNotes by remember { mutableStateOf(false) }
 
     Card(
@@ -73,45 +65,22 @@ fun UpdateCard(vm: MainViewModel) {
                     maxLines = if (showNotes) Int.MAX_VALUE else 3,
                     overflow = TextOverflow.Ellipsis,
                 )
-                TextButton(onClick = { showNotes = !showNotes }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                TextButton(onClick = { showNotes = !showNotes }, contentPadding = PaddingValues(0.dp)) {
                     Text(if (showNotes) "Ver menos" else "Ver novedades")
                 }
             }
-
-            when (val s = state) {
-                is UpdateState.Downloading -> {
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(progress = { s.progress }, modifier = Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(4.dp))
-                    Text("Descargando… ${(s.progress * 100).toInt()} %", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "Se descarga con el navegador. Al terminar, toca la descarga para instalarla encima: se conservan tus listas y reglas.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(onClick = { vm.downloadUpdate(ctx) }) {
+                    Icon(Icons.Filled.Download, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Descargar")
                 }
-                is UpdateState.Ready -> {
-                    if (needsPermission) {
-                        Text(
-                            "Permite a ScudoDNS instalar apps en el ajuste que se ha abierto, vuelve y pulsa Instalar otra vez.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = { needsPermission = !vm.installUpdate(ctx) }) { Text("Instalar") }
-                        TextButton(onClick = vm::dismissUpdate) { Text("Más tarde") }
-                    }
-                }
-                is UpdateState.Failed -> {
-                    Text(s.message, style = MaterialTheme.typography.bodySmall, color = cs.error)
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = vm::downloadUpdate) { Text("Reintentar") }
-                        TextButton(onClick = {
-                            runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.pageUrl))) }
-                        }) { Text("Abrir en GitHub") }
-                    }
-                }
-                else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(onClick = vm::downloadUpdate) { Text("Descargar e instalar") }
-                    TextButton(onClick = vm::dismissUpdate) { Text("Ahora no") }
-                }
+                TextButton(onClick = vm::dismissUpdate) { Text("Ahora no") }
             }
         }
     }
@@ -138,8 +107,7 @@ fun UpdateSettings(vm: MainViewModel) {
                 when (val s = state) {
                     UpdateState.Checking -> "Comprobando…"
                     UpdateState.UpToDate -> "Tienes la última versión."
-                    is UpdateState.Available, is UpdateState.Downloading, is UpdateState.Ready ->
-                        "Hay una versión nueva: la tienes en Inicio."
+                    is UpdateState.Available -> "Hay una versión nueva: la tienes en Inicio."
                     is UpdateState.Failed -> s.message
                     UpdateState.Idle -> ""
                 },
