@@ -1,10 +1,12 @@
-# Escudo DNS - compila el APK en Windows sin instalar Android Studio.
-# Descarga en %LOCALAPPDATA%\EscudoBuild: JDK 17 (Microsoft), Android SDK (Google) y Gradle.
+# ScudoDNS - compila el APK en Windows sin instalar Android Studio.
+# Descarga en %LOCALAPPDATA%\ScudoBuild: JDK 17 (Microsoft), Android SDK (Google) y Gradle.
 # No necesita permisos de administrador. El registro queda en build-log.txt.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$tool = Join-Path $env:LOCALAPPDATA 'EscudoBuild'
+$tool = Join-Path $env:LOCALAPPDATA 'ScudoBuild'
+$oldTool = Join-Path $env:LOCALAPPDATA 'EscudoBuild'
+if ((Test-Path $oldTool) -and -not (Test-Path $tool)) { Rename-Item $oldTool 'ScudoBuild' }  # reutiliza lo ya descargado
 New-Item -ItemType Directory -Force $tool | Out-Null
 Start-Transcript -Path (Join-Path $root 'build-log.txt') -Force | Out-Null
 
@@ -78,8 +80,8 @@ try {
     if ($code -ne 0) { throw "Gradle termino con error $code" }
 
     $apk = Get-ChildItem (Join-Path $root 'app\build\outputs\apk\release') -Filter *.apk | Select-Object -First 1
-    Copy-Item $apk.FullName (Join-Path $root 'EscudoDNS.apk') -Force
-    Step "LISTO: $(Join-Path $root 'EscudoDNS.apk')"
+    Copy-Item $apk.FullName (Join-Path $root 'ScudoDNS.apk') -Force
+    Step "LISTO: $(Join-Path $root 'ScudoDNS.apk')"
     Set-Content -Path (Join-Path $root 'build-status.txt') -Value 'OK'
 } catch {
     Write-Host "`nERROR: $_" -ForegroundColor Red

@@ -1,4 +1,4 @@
-# Escudo DNS
+# ScudoDNS
 
 Bloqueador de anuncios y rastreadores para Android, al estilo Pi-hole, que funciona dentro del móvil (también con datos móviles y fuera de casa).
 
@@ -37,7 +37,7 @@ Algunas listas recomendadas:
 
 **Opción A: GitHub, sin instalar nada.** Sube la carpeta a un repositorio de GitHub. La acción `.github/workflows/build.yml` pasa los tests, compila el APK y lo deja en *Actions → (última ejecución) → Artifacts*.
 
-**Opción B: Windows sin Android Studio.** Doble clic en `compilar.bat`. La primera vez descarga JDK 17 y el Android SDK en `%LOCALAPPDATA%\EscudoBuild` (~1 GB) y deja el APK como `EscudoDNS.apk` en la carpeta del proyecto. El registro queda en `build-log.txt`.
+**Opción B: Windows sin Android Studio.** Doble clic en `compilar.bat`. La primera vez descarga JDK 17 y el Android SDK en `%LOCALAPPDATA%\ScudoBuild` (~1 GB) y deja el APK como `ScudoDNS.apk` en la carpeta del proyecto. El registro queda en `build-log.txt`.
 
 **Opción C: Android Studio.** Abre la carpeta y ejecuta *Run* o *Build → Build APK(s)*.
 
@@ -47,8 +47,8 @@ El APK de release va firmado con la clave de debug para que puedas instalarlo di
 
 1. **Ajustes → Conexión y uso compartido → DNS privado → Desactivado.** Si tiene un servidor puesto (p. ej. `dns.adguard.com`), Android manda el DNS cifrado por la VPN y **se queda sin Internet**. La tarjeta Diagnóstico avisa si está activo.
 2. **Chrome → Configuración → Privacidad → Usar DNS seguro → Desactivado.** Lo mismo en Firefox (DoH) y Brave.
-3. **Ajustes → Red → VPN → Escudo DNS → VPN siempre activada.** Así arranca sola al encender el móvil.
-4. En Xiaomi, Samsung o Huawei: quita la optimización de batería para Escudo DNS.
+3. **Ajustes → Red → VPN → ScudoDNS → VPN siempre activada.** Así arranca sola al encender el móvil.
+4. En Xiaomi, Samsung o Huawei: quita la optimización de batería para ScudoDNS.
 
 ## Limitaciones (comunes a cualquier bloqueador DNS)
 
@@ -59,8 +59,8 @@ El APK de release va firmado con la clave de debug para que puedas instalarlo di
 ## Estructura
 
 ```
-app/src/main/java/es/fabi/escudo/
-├── vpn/EscudoVpnService.kt   VPN local, lectura del túnel y reenvío DNS
+app/src/main/java/es/rehxio/scudo/
+├── vpn/ScudoVpnService.kt   VPN local, lectura del túnel y reenvío DNS
 ├── vpn/Packets.kt            Parseo y construcción de paquetes IPv4/IPv6 + UDP
 ├── vpn/Dns.kt                Lectura de consultas y respuestas de bloqueo
 ├── filter/ListParser.kt      Parser de formatos hosts / dominios / AdBlock

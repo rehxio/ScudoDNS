@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 0.4.0 — 19/11/2026
+- La app pasa a llamarse **ScudoDNS** (paquete `es.rehxio.scudo`). Al cambiar el identificador, se instala como app nueva: desinstala antes Escudo DNS.
+- Aviso en la pantalla principal, con botón a los ajustes, si el **DNS privado** de Android está activo.
+- La tarjeta Diagnóstico aparece plegada por defecto.
+
 ## 0.3.1 — 19/11/2026
 - Tarjeta **Diagnóstico** en Inicio: paquetes leídos, consultas respondidas, DNS en uso, último error y aviso si el **DNS privado** de Android está activo.
 - Las conexiones TCP al DNS (DNS sobre TLS en el puerto 853 y DNS por TCP) se rechazan al instante con RST, en vez de quedarse esperando.

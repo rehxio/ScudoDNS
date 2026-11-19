@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "EscudoDNS"
+rootProject.name = "ScudoDNS"
 include(":app")

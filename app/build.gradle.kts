@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "es.fabi.escudo"
+    namespace = "es.rehxio.scudo"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "es.fabi.escudo"
+        applicationId = "es.rehxio.scudo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
     }
 
     buildTypes {
