@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Wiki de ScudoDNS
+    url: https://github.com/rehxio/ScudoDNS/wiki
+    about: Instalación, cómo funciona y problemas frecuentes.
+  - name: Problemas frecuentes
+    url: https://github.com/rehxio/ScudoDNS/wiki/Problemas-frecuentes
+    about: Sin Internet con la protección activa, una app que deja de funcionar, etc.

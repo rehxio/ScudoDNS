@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.AlertDialog
@@ -56,6 +57,7 @@ fun MainScreen(vm: MainViewModel, onToggle: (Boolean) -> Unit) {
     var showAdd by remember { mutableStateOf(false) }
     var showDns by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -68,6 +70,7 @@ fun MainScreen(vm: MainViewModel, onToggle: (Boolean) -> Unit) {
                 actions = {
                     when (tab) {
                         0 -> {
+                            IconButton(onClick = { showAbout = true }) { Icon(Icons.Outlined.Info, "Acerca de ScudoDNS") }
                             IconButton(onClick = { showDns = true }) { Icon(Icons.Filled.Dns, "Servidores DNS") }
                             if (busy) CircularProgressIndicator(Modifier.padding(12.dp).size(24.dp), strokeWidth = 2.dp)
                             else IconButton(onClick = vm::updateAll) { Icon(Icons.Filled.Refresh, "Actualizar listas") }
@@ -101,7 +104,7 @@ fun MainScreen(vm: MainViewModel, onToggle: (Boolean) -> Unit) {
     ) { padding ->
         val m = Modifier.padding(padding)
         when (tab) {
-            0 -> HomeTab(vm, onToggle, m)
+            0 -> HomeTab(vm, onToggle, m, onAbout = { showAbout = true })
             1 -> LogTab(vm, m)
             else -> RulesTab(vm, m)
         }
@@ -109,6 +112,7 @@ fun MainScreen(vm: MainViewModel, onToggle: (Boolean) -> Unit) {
 
     if (showAdd) AddListDialog(onDismiss = { showAdd = false }) { name, url -> vm.add(name, url); showAdd = false }
     if (showDns) DnsDialog(vm.upstreams.collectAsState().value, onDismiss = { showDns = false }, onSave = vm::saveUpstreams)
+    if (showAbout) AboutSheet(onDismiss = { showAbout = false })
     if (confirmClear) AlertDialog(
         onDismissRequest = { confirmClear = false },
         title = { Text("¿Vaciar el registro?") },

@@ -4,6 +4,9 @@
 - La app pasa a llamarse **ScudoDNS** (paquete `es.rehxio.scudo`). Al cambiar el identificador, se instala como app nueva: desinstala antes Escudo DNS.
 - Aviso en la pantalla principal, con botón a los ajustes, si el **DNS privado** de Android está activo.
 - La tarjeta Diagnóstico aparece plegada por defecto.
+- Nueva pantalla **Acerca de** (icono ⓘ arriba o enlace al final de Inicio): versión, licencia, código, guía, reportar fallos y un apartado opcional de donativos.
+- Licencia **GPL-3.0**: ScudoDNS pasa a ser software libre.
+- Web del proyecto (`docs/`, GitHub Pages), wiki (`wiki/`), plantillas de issues y pull requests, y compilación automática en GitHub Actions.
 
 ## 0.3.1 — 19/11/2026
 - Tarjeta **Diagnóstico** en Inicio: paquetes leídos, consultas respondidas, DNS en uso, último error y aviso si el **DNS privado** de Android está activo.

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScudoDNS · Bloqueador de anuncios para Android, libre y gratis</title>
+<meta name="description" content="ScudoDNS bloquea anuncios, rastreadores y malware en todo tu Android, como Pi-hole pero dentro del móvil. Software libre, gratis y sin servidores propios.">
+<meta property="og:title" content="ScudoDNS · Bloquea anuncios en todo tu Android">
+<meta property="og:description" content="Bloquea anuncios y rastreadores en todas las apps de Android. Libre, gratis y sin rastreo.">
+<meta name="theme-color" content="#0e1412">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='24' fill='%230F3D3A'/%3E%3Cpath fill='%235EE6C8' d='M54 22l24 9v18c0 16-11 28-24 33C41 77 30 65 30 49V31z'/%3E%3Cpath fill='%230F3D3A' d='M42 49h24v8H42z'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0b100f; --bg2: #111816; --card: #151d1a; --line: #24302c;
+    --text: #e3ebe7; --muted: #9fb0a9; --teal: #5dcaa5; --teal-2: #1d9e75; --teal-ink: #04342c;
+    --red: #f09595; --red-bg: #3b1616; --amber: #ef9f27;
+    --radius: 18px; --max: 1080px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--teal); }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+  /* Cabecera */
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(11,16,15,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 16px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; }
+  .brand svg { width: 30px; height: 30px; }
+  nav { margin-left: auto; display: flex; gap: 22px; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 15px; }
+  nav a:hover { color: var(--text); }
+  @media (max-width: 720px) { nav { display: none; } }
+
+  /* Botones */
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; transition: transform .15s, background .15s; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--teal); color: var(--teal-ink); }
+  .btn-primary:hover { background: #7ad8b8; }
+  .btn-ghost { border: 1px solid var(--line); color: var(--text); }
+  .btn-ghost:hover { background: var(--card); }
+  .btn svg { width: 20px; height: 20px; }
+
+  /* Portada */
+  .hero { padding: 72px 0 48px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+  @media (max-width: 880px) { .hero .wrap { grid-template-columns: 1fr; } }
+  .pill { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--teal); border: 1px solid #1f4a3e; background: #0f2620; padding: 6px 12px; border-radius: 999px; }
+  h1 { font-size: clamp(36px, 6vw, 58px); line-height: 1.05; margin: 18px 0 18px; letter-spacing: -0.02em; }
+  h1 em { font-style: normal; color: var(--teal); }
+  .lead { font-size: 19px; color: var(--muted); max-width: 34em; margin: 0 0 30px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .meta { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+  /* Teléfono */
+  .phone { width: 300px; max-width: 100%; margin: 0 auto; background: #0e1412; border: 1px solid var(--line); border-radius: 40px; padding: 18px 16px 22px; box-shadow: 0 40px 80px -30px rgba(29,158,117,.35); }
+  .phone .bar { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding: 0 8px 12px; }
+  .phone h3 { margin: 4px 6px 12px; font-size: 20px; }
+  .status { background: var(--teal); color: var(--teal-ink); border-radius: 22px; padding: 16px; }
+  .status .row { display: flex; align-items: center; gap: 12px; }
+  .status .ico { width: 40px; height: 40px; border-radius: 50%; background: rgba(4,52,44,.14); display: grid; place-items: center; }
+  .status .ico svg { width: 22px; height: 22px; }
+  .status b { display: block; font-size: 17px; }
+  .status small { font-size: 12px; opacity: .8; }
+  .toggle { margin-left: auto; width: 42px; height: 24px; border-radius: 12px; background: var(--teal-ink); position: relative; }
+  .toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--teal); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
+  .tiles div { background: rgba(4,52,44,.1); border-radius: 12px; padding: 8px; }
+  .tiles strong { display: block; font-size: 15px; }
+  .tiles span { font-size: 10px; opacity: .75; }
+  .meter { height: 5px; border-radius: 3px; background: rgba(4,52,44,.18); margin-top: 12px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 27%; background: var(--teal-ink); border-radius: 3px; animation: grow 2.4s ease-out; }
+  @keyframes grow { from { width: 0; } }
+  .log { margin-top: 12px; }
+  .log div { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .log div:last-child { border-bottom: 0; }
+  .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; font-size: 12px; }
+  .dot.b { background: var(--red-bg); color: var(--red); }
+  .dot.a { background: #0f2a22; color: var(--teal); }
+  .log p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log p small { display: block; color: var(--muted); font-size: 10px; }
+
+  /* Secciones */
+  section { padding: 72px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.01em; margin: 0 0 12px; }
+  .sub { color: var(--muted); font-size: 17px; margin: 0 0 36px; max-width: 40em; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .card h4 { margin: 12px 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .ic { width: 40px; height: 40px; border-radius: 12px; background: #0f2a22; color: var(--teal); display: grid; place-items: center; }
+  .card .ic svg { width: 22px; height: 22px; }
+
+  .steps { counter-reset: s; display: grid; gap: 14px; }
+  .step { display: grid; grid-template-columns: 48px 1fr; gap: 16px; align-items: start; }
+  .step::before { counter-increment: s; content: counter(s); width: 40px; height: 40px; border-radius: 50%; background: var(--teal); color: var(--teal-ink); font-weight: 700; display: grid; place-items: center; }
+  .step h4 { margin: 6px 0 4px; font-size: 17px; }
+  .step p { margin: 0; color: var(--muted); }
+
+  .notice { border: 1px solid #5a2a2a; background: #1c1111; border-radius: var(--radius); padding: 20px 22px; margin-top: 28px; }
+  .notice b { color: var(--red); }
+  .notice p { margin: 6px 0 0; color: #d9c4c4; font-size: 15px; }
+
+  .compare { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .compare th, .compare td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+  .compare th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  .yes { color: var(--teal); font-weight: 700; }
+  .no { color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; list-style: none; }
+  summary::after { content: "+"; float: right; color: var(--teal); font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: "−"; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+
+  .donate { text-align: center; background: linear-gradient(180deg, #0f2620, var(--bg)); }
+  .donate .sub { margin-left: auto; margin-right: auto; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <svg viewBox="0 0 108 108" aria-hidden="true"><rect width="108" height="108" rx="26" fill="#0F3D3A"/><path fill="#5EE6C8" d="M54 22l24 9v18c0 16-11 28-24 33C41 77 30 65 30 49V31z"/><path fill="#0F3D3A" d="M42 49h24v8H42z"/></svg>
+      ScudoDNS
+    </a>
+    <nav>
+      <a href="#funciones">Funciones</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#preguntas">Preguntas</a>
+      <a href="https://github.com/rehxio/ScudoDNS/wiki">Guía</a>
+      <a href="https://github.com/rehxio/ScudoDNS">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <span class="pill">● Software libre · GPL-3.0</span>
+        <h1>Bloquea anuncios en <em>todo</em> tu Android.</h1>
+        <p class="lead">ScudoDNS filtra anuncios, rastreadores y malware en <strong>todas las apps</strong>, en Wi-Fi y con datos, como lo haría Pi-hole pero dentro del móvil. Sin root, sin cuentas y sin enviar tu tráfico a ningún servidor.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/rehxio/ScudoDNS/releases/latest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 21h14"/></svg>
+            Descargar APK
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/rehxio/ScudoDNS">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a10.9 10.9 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+            Ver el código
+          </a>
+        </div>
+        <p class="meta">Gratis para siempre · Android 8.0 o superior · Unos 2 MB</p>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone" role="img" aria-label="Pantalla de ScudoDNS con la protección activada y el registro de consultas">
+          <div class="bar"><span>10:10</span><span>🔑 ▂▄▆ ◔</span></div>
+          <h3>ScudoDNS</h3>
+          <div class="status">
+            <div class="row">
+              <div class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.7-8 11-4.6-1.3-8-5.8-8-11V5zm-1.2 13.4l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7.2 11.8z"/></svg></div>
+              <div><b>Protegido</b><small>402.959 dominios bloqueados</small></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="tiles">
+              <div><strong>4.218</strong><span>Consultas</span></div>
+              <div><strong>1.137</strong><span>Bloqueadas</span></div>
+              <div><strong>27 %</strong><span>Bloqueado</span></div>
+            </div>
+            <div class="meter"><i></i></div>
+          </div>
+          <div class="log">
+            <div><span class="dot b">⊘</span><p>googleads.g.doubleclick.net<small>10:10:12 · A · Chrome</small></p></div>
+            <div><span class="dot a">✓</span><p>api.whatsapp.net<small>10:10:09 · A · WhatsApp</small></p></div>
+            <div><span class="dot b">⊘</span><p>sdkconfig.ad.intl.xiaomi.com<small>10:09:55 · A · Sistema</small></p></div>
+            <div><span class="dot b">⊘</span><p>app-measurement.com<small>10:09:51 · A · Wallapop</small></p></div>
+            <div><span class="dot a">✓</span><p>www.elmundo.es<small>10:09:47 · A · Chrome</small></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="funciones">
+    <div class="wrap">
+      <h2>Como Pi-hole, sin montar un servidor</h2>
+      <p class="sub">Funciona dentro del móvil, así que te protege también fuera de casa y con datos móviles.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+          <h4>Tus listas, por URL</h4>
+          <p>HaGeZi, StevenBlack, AdGuard u otras. Formatos hosts, dominios y AdBlock. Se actualizan solas cada día.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div>
+          <h4>Registro en directo</h4>
+          <p>Cada consulta, con la app que la hizo. Busca, filtra y elige 25, 50, 100 o 200 por página.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg></div>
+          <h4>Bloquea o permite con un toque</h4>
+          <p>Si una app deja de funcionar, toca el dominio y permítelo. Tus reglas mandan sobre las listas.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+          <h4>Ligera de verdad</h4>
+          <p>Solo el DNS pasa por la app. Un millón de dominios caben en unos 8 MB y cada consulta tarda microsegundos.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h4>Privada por diseño</h4>
+          <p>Sin cuentas, sin analíticas y sin servidores propios. Tus consultas van a tu DNS de siempre.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+          <h4>Libre y abierta</h4>
+          <p>Código bajo licencia GPL-3.0. Puedes revisarlo, compilarlo tú mismo y proponer mejoras.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona">
+    <div class="wrap">
+      <h2>Cómo funciona</h2>
+      <p class="sub">Antes de cargar un anuncio, cada app pregunta al DNS dónde está. ScudoDNS responde «en ningún sitio».</p>
+      <div class="steps">
+        <div class="step"><div><h4>Crea una VPN local que solo escucha el DNS</h4><p>Es la única forma que tiene Android de filtrar todas las apps sin root. El resto del tráfico no pasa por ella: no pierdes velocidad.</p></div></div>
+        <div class="step"><div><h4>Compara cada dominio con tus listas</h4><p>Si está en ellas, o lo está uno de sus dominios padre, responde <code>0.0.0.0</code> al instante y el anuncio no llega a cargarse.</p></div></div>
+        <div class="step"><div><h4>Lo demás va a tu DNS de siempre</h4><p>El de tu router, tu Pi-hole o tu operador, con Quad9 y Cloudflare de respaldo. Si uno no contesta, prueba el siguiente.</p></div></div>
+      </div>
+      <div class="notice">
+        <b>Importante: desactiva el «DNS privado» de Android.</b>
+        <p>Si tienes puesto un servidor como <code>dns.adguard.com</code>, Android se salta el filtro y te quedarás sin Internet con la protección activa. ScudoDNS lo detecta y te avisa. <a href="https://github.com/rehxio/ScudoDNS/wiki/Instalación">Ver cómo hacerlo</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="comparativa">
+    <div class="wrap">
+      <h2>¿Por qué no un DNS público?</h2>
+      <p class="sub">Los DNS con filtro (AdGuard DNS, NextDNS…) funcionan bien, pero no ves lo que pasa ni decides qué se bloquea.</p>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th></th><th>ScudoDNS</th><th>DNS público con filtro</th><th>Pi-hole en casa</th></tr></thead>
+          <tbody>
+            <tr><td>Funciona fuera de casa</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="no">Solo con VPN a casa</td></tr>
+            <tr><td>Eliges las listas</td><td class="yes">Sí</td><td class="no">Limitado</td><td class="yes">Sí</td></tr>
+            <tr><td>Ves qué app hace cada consulta</td><td class="yes">Sí</td><td class="no">No</td><td class="no">Solo el dispositivo</td></tr>
+            <tr><td>Tus consultas no pasan por terceros</td><td class="yes">Sí</td><td class="no">No</td><td class="yes">Sí</td></tr>
+            <tr><td>No necesita hardware</td><td class="yes">Sí</td><td class="yes">Sí</td><td class="no">No</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="preguntas">
+    <div class="wrap">
+      <h2>Preguntas frecuentes</h2>
+      <p class="sub">Más detalles en la <a href="https://github.com/rehxio/ScudoDNS/wiki">guía</a>.</p>
+      <details><summary>¿Bloquea los anuncios de YouTube o Instagram?</summary>
+        <p>No. Esos anuncios vienen del mismo dominio que el contenido, y bloquearlos rompería la app. Le pasa a cualquier bloqueador por DNS, incluido Pi-hole.</p></details>
+      <details><summary>¿Por qué no está en Google Play?</summary>
+        <p>Las normas de Google Play no admiten apps que bloqueen anuncios de otras apps. Puedes descargarla desde las Releases de GitHub o compilarla tú desde el código.</p></details>
+      <details><summary>¿Puedo usarla con otra VPN?</summary>
+        <p>No a la vez: Android solo permite una VPN activa.</p></details>
+      <details><summary>¿Gasta mucha batería?</summary>
+        <p>Muy poca. Solo pasan por la app las consultas DNS, que son unos pocos miles al día, y cada una se resuelve en microsegundos.</p></details>
+      <details><summary>¿Recoge algún dato?</summary>
+        <p>No. No hay cuentas, analíticas ni servidores de ScudoDNS. El registro de consultas solo existe en la memoria de tu móvil.</p></details>
+      <details><summary>Una app ha dejado de funcionar, ¿qué hago?</summary>
+        <p>Abre la pestaña Registro, busca la app, toca el dominio bloqueado y pulsa «Permitir».</p></details>
+    </div>
+  </section>
+
+  <section class="donate" id="apoyar" hidden>
+    <div class="wrap">
+      <h2>¿Te resulta útil?</h2>
+      <p class="sub">ScudoDNS es y será siempre gratis, sin anuncios y sin versión de pago. Si quieres apoyar su desarrollo, puedes invitarme a un café.</p>
+      <a class="btn btn-primary" id="donate-link" href="#">☕ Invitar a un café</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>ScudoDNS · Software libre bajo licencia <a href="https://github.com/rehxio/ScudoDNS/blob/main/LICENSE">GPL-3.0</a></span>
+    <span>
+      <a href="https://github.com/rehxio/ScudoDNS">Código</a> ·
+      <a href="https://github.com/rehxio/ScudoDNS/wiki">Guía</a> ·
+      <a href="https://github.com/rehxio/ScudoDNS/issues/new?template=fallo.yml">Reportar un fallo</a> ·
+      <a href="https://github.com/rehxio/ScudoDNS/releases">Versiones</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  // Enlace de donativos: pon aquí tu Ko-fi, PayPal, etc. Si se deja vacío, la sección no se muestra.
+  const DONATE_URL = "";
+  if (DONATE_URL) {
+    document.getElementById("donate-link").href = DONATE_URL;
+    document.getElementById("apoyar").hidden = false;
+  }
+</script>
+</body>
+</html>

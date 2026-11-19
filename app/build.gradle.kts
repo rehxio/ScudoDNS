@@ -14,6 +14,11 @@ android {
         targetSdk = 35
         versionCode = 5
         versionName = "0.4.0"
+
+        // Enlaces de "Acerca de". El de donaciones se configura en gradle.properties (scudo.donateUrl);
+        // si está vacío, la sección de donativos no aparece en la app.
+        buildConfigField("String", "REPO_URL", "\"https://github.com/rehxio/ScudoDNS\"")
+        buildConfigField("String", "DONATE_URL", "\"${project.findProperty("scudo.donateUrl") ?: ""}\"")
     }
 
     buildTypes {
@@ -31,7 +36,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {

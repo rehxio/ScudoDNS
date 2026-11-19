@@ -2,6 +2,10 @@
 
 Bloqueador de anuncios y rastreadores para Android, al estilo Pi-hole, que funciona dentro del móvil (también con datos móviles y fuera de casa).
 
+**Software libre (GPL-3.0), gratis y sin rastreo.**
+
+[Web](https://rehxio.github.io/ScudoDNS/) · [Descargar](https://github.com/rehxio/ScudoDNS/releases/latest) · [Guía](https://github.com/rehxio/ScudoDNS/wiki) · [Reportar un fallo](https://github.com/rehxio/ScudoDNS/issues/new?template=fallo.yml) · [Proponer una mejora](https://github.com/rehxio/ScudoDNS/issues/new?template=mejora.yml)
+
 ## Cómo funciona
 
 - Crea una **VPN local** que solo captura el DNS. El resto del tráfico no pasa por el túnel, así que no gasta batería ni pierde velocidad, y nada sale del móvil hacia servidores de terceros.
@@ -71,3 +75,11 @@ app/src/main/java/es/rehxio/scudo/
 ├── log/AppResolver.kt        App que hizo cada consulta (Android 10+)
 └── ui/                       Interfaz en Jetpack Compose (Inicio, Registro, Reglas)
 ```
+
+## Contribuir
+
+Los fallos y las ideas se recogen en [Issues](https://github.com/rehxio/ScudoDNS/issues), con plantillas que piden lo necesario para reproducirlos. Las propuestas de código llegan como pull request: cada una se revisa antes de incorporarse, y GitHub Actions comprueba que compila y pasa los tests.
+
+## Licencia
+
+ScudoDNS es software libre: puedes usarlo, estudiarlo, modificarlo y redistribuirlo bajo los términos de la [GNU General Public License v3.0](LICENSE). Las versiones modificadas que se distribuyan deben seguir siendo libres y con el código disponible.

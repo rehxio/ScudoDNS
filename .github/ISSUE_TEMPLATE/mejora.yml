@@ -1,0 +1,33 @@
+name: Proponer una mejora
+description: Una idea para que ScudoDNS sea más útil.
+title: "[Mejora] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resolvería?
+      description: Cuéntalo desde el uso real, no desde la solución.
+      placeholder: Cada vez que una app falla tengo que buscar a mano qué dominio permitir.
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Qué propones?
+      placeholder: Un botón "Permitir todo lo de esta app durante 5 minutos" en el Registro.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas que has considerado (opcional)
+
+  - type: checkboxes
+    id: ayuda
+    attributes:
+      label: Participación
+      options:
+        - label: Me gustaría implementarlo yo con un pull request.

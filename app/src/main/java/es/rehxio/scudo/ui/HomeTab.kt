@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.content.Intent
@@ -64,7 +65,7 @@ import java.util.Date
 internal val nf: NumberFormat = NumberFormat.getIntegerInstance()
 
 @Composable
-fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier) {
+fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, onAbout: () -> Unit) {
     val lists by vm.lists.collectAsState()
     val running by vm.running.collectAsState()
     val total by vm.totalDomains.collectAsState()
@@ -91,6 +92,15 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier) 
         }
         items(lists, key = { it.id }) { l ->
             ListCard(l, onEnabled = { vm.setEnabled(l.id, it) }, onDelete = { toDelete = l })
+        }
+        item {
+            Text(
+                "ScudoDNS es gratis y de código abierto · Acerca de",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onAbout).padding(vertical = 16.dp),
+                textAlign = TextAlign.Center,
+            )
         }
     }
 
