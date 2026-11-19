@@ -1,5 +1,5 @@
 # Avisa (y propone la actualización) cuando una dependencia o acción tiene versión nueva
-# o una vulnerabilidad conocida.
+# o una vulnerabilidad conocida. Las actualizaciones relacionadas llegan juntas en un solo PR.
 version: 2
 updates:
   - package-ecosystem: gradle
@@ -7,7 +7,23 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # Kotlin y su plugin de Compose deben ir siempre a la misma versión.
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*"]
+      androidx:
+        patterns: ["androidx.*"]
+        update-types: [minor, patch]
+    ignore:
+      # Saltos grandes que exigen migrar el proyecto a mano: se harán aparte, no por PR automático.
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.jetbrains.kotlin*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      acciones:
+        patterns: ["*"]

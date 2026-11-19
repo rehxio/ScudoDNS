@@ -8,7 +8,17 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.VpnService
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.pm.ServiceInfo
 import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import es.rehxio.scudo.MainActivity
+import es.rehxio.scudo.R
+import java.io.FileDescriptor
 import android.os.ParcelFileDescriptor
 import android.system.ErrnoException
 import android.system.Os
@@ -56,6 +66,8 @@ import java.util.concurrent.atomic.AtomicLong
 class ScudoVpnService : VpnService() {
 
     @Volatile private var tun: ParcelFileDescriptor? = null
+    /** Extremo de escritura de una tubería que despierta al hilo lector para que termine. */
+    @Volatile private var wakeWrite: FileDescriptor? = null
     private var reader: Thread? = null
     private var pool: ExecutorService? = null
     private var out: FileOutputStream? = null
@@ -85,12 +97,61 @@ class ScudoVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            setWanted(this, false) // el usuario la ha apagado: no se vuelve a encender sola
             stopVpn()
             stopSelf()
             return START_NOT_STICKY
         }
+        // Servicio en primer plano desde el primer momento: Android no lo cierra para ahorrar
+        // memoria y, si se arrancó con startForegroundService (arranque del móvil), cumple el plazo.
+        goForeground()
         startVpn()
+        if (tun == null) { // sin permiso de VPN u otro error: no nos quedamos a medias
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        setWanted(this, true)
+        // START_STICKY: si el sistema mata el proceso, lo vuelve a arrancar en cuanto puede.
         return START_STICKY
+    }
+
+    /** Notificación mínima y silenciosa: sin sonido, sin icono en la barra de estado. */
+    private fun goForeground() {
+        val nm = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(CHANNEL_ID) == null) {
+            nm.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, "Protección activa", NotificationManager.IMPORTANCE_MIN).apply {
+                    description = "Aviso permanente mientras ScudoDNS filtra el DNS"
+                    setShowBadge(false)
+                }
+            )
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val open = PendingIntent.getActivity(this, 0,
+            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), flags)
+        val pause = PendingIntent.getService(this, 1,
+            Intent(this, ScudoVpnService::class.java).setAction(ACTION_STOP), flags)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_shield)
+            .setContentTitle("ScudoDNS protege este móvil")
+            .setContentText("Bloqueando anuncios y rastreadores")
+            .setContentIntent(open)
+            .addAction(0, "Pausar", pause)
+            .setOngoing(true)
+            .setSilent(true)
+            .setShowWhen(false)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+        val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+        try {
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)
+        } catch (e: Exception) {
+            // Algunos reinicios en segundo plano no lo permiten (Android 12+). La VPN sigue funcionando:
+            // el sistema la mantiene con prioridad alta mientras el túnel está abierto.
+            Log.w(TAG, "No se pudo pasar a primer plano", e)
+        }
     }
 
     @Synchronized
@@ -113,6 +174,10 @@ class ScudoVpnService : VpnService() {
             .addRoute(DNS_ADDR6, 128)
         // Las descargas de listas y el reenvío DNS de esta app no pasan por la VPN.
         runCatching { builder.addDisallowedApplication(packageName) }
+        // Android 10+ trata cualquier VPN como conexión "de pago" salvo que se diga lo contrario:
+        // las apps dejarían de hacer copias de seguridad o descargas grandes por Wi-Fi.
+        // Así la VPN hereda lo que sea la red real (Wi-Fi sin límite, datos medidos).
+        if (Build.VERSION.SDK_INT >= 29) builder.setMetered(false)
 
         val fd = try { builder.establish() } catch (e: Exception) {
             Log.e(TAG, "No se pudo crear la VPN", e); null
@@ -126,30 +191,43 @@ class ScudoVpnService : VpnService() {
         pool = ThreadPoolExecutor(
             WORKERS, WORKERS, 30, TimeUnit.SECONDS,
             ArrayBlockingQueue(QUEUE_CAPACITY), ThreadPoolExecutor.AbortPolicy(),
-        )
-        attempts = ScheduledThreadPoolExecutor(ATTEMPT_THREADS).apply { removeOnCancelPolicy = true }
-        reader = Thread({ readLoop(fd) }, "scudo-tun").apply { start() }
+        ).apply { allowCoreThreadTimeOut(true) } // sin consultas, los hilos se liberan
+        attempts = ScheduledThreadPoolExecutor(ATTEMPT_THREADS).apply {
+            removeOnCancelPolicy = true
+            setKeepAliveTime(30, TimeUnit.SECONDS)
+            allowCoreThreadTimeOut(true)
+        }
+        val (wakeRead, wakeW) = Os.pipe()
+        wakeWrite = wakeW
+        reader = Thread({ readLoop(fd, wakeRead) }, "scudo-tun").apply { start() }
         _running.value = true
     }
 
     /**
-     * Lectura no bloqueante con poll(): así podemos parar el hilo de forma fiable
-     * (en algunos Android cerrar el descriptor no desbloquea un read() bloqueante).
+     * Lectura con poll() sin tiempo de espera: el hilo duerme hasta que llega un paquete o hasta que
+     * stopVpn() escribe en la tubería de aviso. Así no despierta la CPU cada segundo para nada.
      */
-    private fun readLoop(fd: ParcelFileDescriptor) {
+    private fun readLoop(fd: ParcelFileDescriptor, wakeRead: FileDescriptor) {
         val input = FileInputStream(fd.fileDescriptor)
         val buf = ByteArray(32767)
-        val pollFd = StructPollfd().apply {
+        val tunPoll = StructPollfd().apply {
             this.fd = fd.fileDescriptor
             events = OsConstants.POLLIN.toShort()
         }
+        val wakePoll = StructPollfd().apply {
+            this.fd = wakeRead
+            events = OsConstants.POLLIN.toShort()
+        }
+        val fds = arrayOf(tunPoll, wakePoll)
         try {
             while (tun === fd) {
-                val ready = try { Os.poll(arrayOf(pollFd), 1000) } catch (e: ErrnoException) {
+                try { Os.poll(fds, -1) } catch (e: ErrnoException) {
                     if (e.errno == OsConstants.EINTR) continue else throw IOException(e)
                 }
-                if (ready <= 0) continue
-                if (pollFd.revents.toInt() and (OsConstants.POLLERR or OsConstants.POLLHUP or OsConstants.POLLNVAL) != 0) break
+                if (wakePoll.revents.toInt() != 0) break // nos piden parar
+                val ev = tunPoll.revents.toInt()
+                if (ev and (OsConstants.POLLERR or OsConstants.POLLHUP or OsConstants.POLLNVAL) != 0) break
+                if (ev and OsConstants.POLLIN == 0) continue
                 val n = try { input.read(buf) } catch (e: IOException) {
                     if (tun !== fd) break else continue // EAGAIN u otro error transitorio
                 }
@@ -161,6 +239,7 @@ class ScudoVpnService : VpnService() {
         } catch (e: IOException) {
             Log.w(TAG, "Fin de la lectura del túnel", e)
         } finally {
+            runCatching { Os.close(wakeRead) }
             if (tun === fd) stopVpn()
         }
     }
@@ -409,7 +488,12 @@ class ScudoVpnService : VpnService() {
     @Synchronized
     private fun stopVpn() {
         val fd = tun ?: return
-        tun = null // el hilo lector lo ve en menos de 1 s y termina
+        tun = null
+        wakeWrite?.let { w -> // despierta al hilo lector para que termine
+            runCatching { Os.write(w, byteArrayOf(1), 0, 1) }
+            runCatching { Os.close(w) }
+        }
+        wakeWrite = null
         _running.value = false
         reader = null
         pool?.shutdownNow()
@@ -423,9 +507,11 @@ class ScudoVpnService : VpnService() {
         preferred = null
         synchronized(writeLock) { out = null }
         runCatching { fd.close() }
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
     }
 
     override fun onRevoke() { // otra VPN tomó el control o el usuario la quitó
+        setWanted(this, false) // no peleamos con la otra VPN volviendo a encendernos
         stopVpn()
         stopSelf()
     }
@@ -457,8 +543,20 @@ class ScudoVpnService : VpnService() {
         val blocked = AtomicLong()
         val failures = AtomicLong()
 
+        private const val CHANNEL_ID = "proteccion"
+        private const val NOTIFICATION_ID = 1
+        private const val PREFS = "scudo"
+        private const val KEY_WANTED = "vpnWanted"
+
+        /** Recuerda si el usuario quiere la protección encendida (para volver a encenderla tras reiniciar o actualizar). */
+        fun setWanted(ctx: Context, on: Boolean) =
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_WANTED, on).apply()
+
+        fun isWanted(ctx: Context) =
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WANTED, false)
+
         fun start(ctx: Context) =
-            ctx.startService(Intent(ctx, ScudoVpnService::class.java).setAction(ACTION_START))
+            ContextCompat.startForegroundService(ctx, Intent(ctx, ScudoVpnService::class.java).setAction(ACTION_START))
 
         fun stop(ctx: Context) =
             ctx.startService(Intent(ctx, ScudoVpnService::class.java).setAction(ACTION_STOP))

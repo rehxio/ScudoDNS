@@ -1,5 +1,27 @@
 # Historial de cambios
 
+## 0.6.0 — 19/11/2026
+### Siempre encendida
+- La protección funciona como **servicio en primer plano**, con una notificación mínima y silenciosa (con botón «Pausar»), para que Android no la cierre para liberar memoria.
+- **Se vuelve a encender sola** al reiniciar el móvil y al actualizar la app, si estaba encendida.
+- Si el sistema mata el proceso, la vuelve a arrancar en cuanto puede.
+- Aviso en Inicio, con accesos directos, para quitar el ahorro de batería y activar «VPN siempre activada» (y, en Xiaomi, el inicio automático).
+- Si otra VPN toma el control, ScudoDNS se aparta y no intenta volver a encenderse.
+
+### Más cómoda
+- **Botón en los ajustes rápidos** (desliza desde arriba y añade «ScudoDNS» al panel): pausa o reanuda la protección sin abrir la app.
+- Al activar la protección por primera vez, los permisos de notificaciones y de VPN se piden uno detrás de otro, ya no a la vez.
+
+- Apartado de **donativos** opcional en *Acerca de* (Ko-fi), sin avisos ni ventanas emergentes.
+
+### Correcciones
+- La VPN ya no hace que Android trate el Wi-Fi como **conexión de pago**: las copias de seguridad y descargas grandes que esperan a una red sin límite vuelven a funcionar con la protección encendida.
+
+### Menos consumo
+- El hilo que lee el túnel ya no se despierta cada segundo: duerme hasta que llega una consulta.
+- Sin consultas, los hilos de trabajo se liberan solos.
+- La pantalla solo se actualiza mientras está visible.
+
 ## 0.5.0 — 19/11/2026
 ### Rendimiento
 - **Caché DNS propia**: las consultas repetidas se contestan al instante, respetando el TTL de cada respuesta. También se guardan las respuestas negativas (NXDOMAIN) según su SOA.

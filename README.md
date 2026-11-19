@@ -82,6 +82,10 @@ app/src/main/java/es/rehxio/scudo/
 
 Los fallos y las ideas se recogen en [Issues](https://github.com/rehxio/ScudoDNS/issues), con plantillas que piden lo necesario para reproducirlos. Las propuestas de código llegan como pull request: cada una se revisa antes de incorporarse, y GitHub Actions comprueba que compila y pasa los tests.
 
+## Apoyar el proyecto
+
+ScudoDNS es y será gratis, sin anuncios ni versión de pago. Si te resulta útil y quieres invitarme a un café: [ko-fi.com/rehxio](https://ko-fi.com/rehxio).
+
 ## Seguridad
 
 Para reportar una vulnerabilidad, consulta [SECURITY.md](SECURITY.md). No abras una issue pública.

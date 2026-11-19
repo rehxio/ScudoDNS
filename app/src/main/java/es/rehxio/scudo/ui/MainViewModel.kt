@@ -13,8 +13,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import android.os.PowerManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** Lo que hace falta para que Android no cierre la protección. */
+data class KeepAlive(val batteryUnrestricted: Boolean)
 
 /** Estado de la pestaña Registro. */
 data class LogState(
@@ -48,6 +53,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _upstreams = MutableStateFlow(repo.upstreams.joinToString(", "))
     val upstreams: StateFlow<String> = _upstreams
 
+    private val visible = MutableStateFlow(false)
+    fun setVisible(v: Boolean) { visible.value = v }
+
+    /** Si Android puede cerrar la app para ahorrar batería (null = no se sabe). */
+    private val _keepAlive = MutableStateFlow(KeepAlive(batteryUnrestricted = true))
+    val keepAlive: StateFlow<KeepAlive> = _keepAlive
+
+    private fun keepAliveStatus(): KeepAlive {
+        val app = getApplication<Application>()
+        val pm = app.getSystemService(PowerManager::class.java)
+        return KeepAlive(batteryUnrestricted = pm?.isIgnoringBatteryOptimizations(app.packageName) ?: true)
+    }
+
     private val _logState = MutableStateFlow(LogState())
     val logState: StateFlow<LogState> = _logState
 
@@ -59,6 +77,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.updateMissing() }
         viewModelScope.launch {
             while (true) {
+                visible.first { it } // en segundo plano se queda dormido sin consumir
+                _keepAlive.value = keepAliveStatus()
                 _stats.value = Triple(ScudoVpnService.queries.get(), ScudoVpnService.blocked.get(),
                     ScudoVpnService.failures.get())
                 _diag.value = es.rehxio.scudo.vpn.Diag.summary()

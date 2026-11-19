@@ -56,6 +56,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.content.Intent
 import android.provider.Settings
+import android.net.Uri
+import android.os.Build
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.platform.LocalContext
 import es.rehxio.scudo.lists.FilterList
 import es.rehxio.scudo.lists.ListRepository
@@ -73,6 +76,7 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
     val stats by vm.stats.collectAsState()
     val diag by vm.diag.collectAsState()
     val privateDns by vm.privateDns.collectAsState()
+    val keepAlive by vm.keepAlive.collectAsState()
     var toDelete by remember { mutableStateOf<FilterList?>(null) }
 
     LazyColumn(
@@ -82,6 +86,7 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
     ) {
         item { StatusCard(running, total, stats, onToggle) }
         privateDns?.let { name -> if (running) item { PrivateDnsWarning(name) } }
+        if (running && !keepAlive.batteryUnrestricted) item { KeepAliveCard() }
         if (running) item { DiagCard(diag) }
         item {
             Row(Modifier.padding(top = 14.dp, start = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.Bottom) {
@@ -172,6 +177,41 @@ private fun StatusCard(running: Boolean, total: Int, stats: Triple<Long, Long, L
                     Text("${nf.format(failed)} consultas sin respuesta del DNS. Revisa los servidores en el botón DNS.",
                         style = MaterialTheme.typography.bodySmall)
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Pasos para que Android no cierre nunca la protección: quitar el ahorro de batería y
+ * activar "VPN siempre activada". Desaparece sola cuando el ahorro de batería ya está quitado.
+ */
+@Composable
+private fun KeepAliveCard() {
+    val cs = MaterialTheme.colorScheme
+    val ctx = LocalContext.current
+    fun open(intent: Intent) = runCatching { ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    Card(
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = cs.secondaryContainer, contentColor = cs.onSecondaryContainer),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Que no se cierre nunca", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Android puede cerrar ScudoDNS para ahorrar batería. Quita el ahorro de batería para esta app " +
+                    "y activa \"VPN siempre activada\": así se mantiene encendida y arranca sola al reiniciar." +
+                    if (Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true))
+                        " En Xiaomi activa también Inicio automático en Ajustes → Apps → ScudoDNS." else "",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(onClick = {
+                    open(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")))
+                }) { Text("Quitar ahorro") }
+                TextButton(onClick = { open(Intent(Settings.ACTION_VPN_SETTINGS)) }) { Text("VPN siempre activa") }
             }
         }
     }
