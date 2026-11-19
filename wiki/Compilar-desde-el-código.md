@@ -11,6 +11,8 @@ La primera vez descarga en `%LOCALAPPDATA%\ScudoBuild` el JDK 17 (Microsoft), el
 
 Los APK de las versiones oficiales se firman con una clave propia. Para firmar los tuyos, ejecuta una vez `crear-clave.bat`: crea la clave en `%USERPROFILE%\.scudodns` (fuera del proyecto, para que nunca se suba a GitHub) y a partir de ahí `compilar.bat` la usa automáticamente. Sin ella, el APK se firma con la clave de pruebas de tu equipo.
 
+Una copia firmada con una clave distinta a la de las versiones oficiales no se instala encima de ellas: hay que desinstalar la app antes.
+
 ## Android Studio
 
 Abre la carpeta del proyecto y usa *Build → Build APK(s)*.

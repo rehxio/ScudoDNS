@@ -112,7 +112,7 @@ fun MainScreen(vm: MainViewModel, onToggle: (Boolean) -> Unit) {
 
     if (showAdd) AddListDialog(onDismiss = { showAdd = false }) { name, url -> vm.add(name, url); showAdd = false }
     if (showDns) DnsDialog(vm.upstreams.collectAsState().value, onDismiss = { showDns = false }, onSave = vm::saveUpstreams)
-    if (showAbout) AboutSheet(onDismiss = { showAbout = false })
+    if (showAbout) AboutSheet(vm, onDismiss = { showAbout = false })
     if (confirmClear) AlertDialog(
         onDismissRequest = { confirmClear = false },
         title = { Text("¿Vaciar el registro?") },

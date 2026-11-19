@@ -8,12 +8,16 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import es.rehxio.scudo.update.AppUpdater
 import java.util.concurrent.TimeUnit
 
-/** Actualiza las listas una vez al día, con conexión y batería suficiente. */
+/** Una vez al día, con conexión y batería suficiente: actualiza las listas y mira si hay versión nueva de la app. */
 class UpdateWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
         ListRepository.get(applicationContext).updateAll()
+        if (AppUpdater.isAutoCheck(applicationContext)) {
+            runCatching { AppUpdater.check(applicationContext, notify = true) }
+        }
         return Result.success()
     }
 

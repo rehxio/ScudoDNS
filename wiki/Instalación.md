@@ -38,6 +38,6 @@ ScudoDNS se mantiene como servicio en primer plano (verás una notificación dis
 
 ## Actualizar
 
-Instala el APK nuevo encima del anterior. Se conservan listas y reglas.
+Desde la versión 0.7.0, ScudoDNS avisa cuando sale una versión nueva: aparece una tarjeta en Inicio (y una notificación discreta). Pulsa **Descargar e instalar** y después **Instalar**. La primera vez, Android te pedirá permitir que ScudoDNS instale apps: actívalo, vuelve y pulsa **Instalar** otra vez.
 
-> Si vienes de **Escudo DNS** (versiones 0.1–0.3), desinstálala antes: ScudoDNS usa otro identificador y Android la trata como una app distinta.
+La comprobación se puede desactivar, o hacer a mano, en **Acerca de** (icono ⓘ). También puedes descargar el APK de [Releases](https://github.com/rehxio/ScudoDNS/releases) e instalarlo encima. En los dos casos se conservan listas y reglas.

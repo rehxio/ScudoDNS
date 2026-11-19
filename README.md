@@ -6,11 +6,15 @@ Bloqueador de anuncios y rastreadores para Android, al estilo Pi-hole, que funci
 
 [Web](https://rehxio.github.io/ScudoDNS/) · [Descargar](https://github.com/rehxio/ScudoDNS/releases/latest) · [Guía](https://github.com/rehxio/ScudoDNS/wiki) · [Reportar un fallo](https://github.com/rehxio/ScudoDNS/issues/new?template=fallo.yml) · [Proponer una mejora](https://github.com/rehxio/ScudoDNS/issues/new?template=mejora.yml)
 
+## Instalar
+
+Descarga el APK de la [última versión](https://github.com/rehxio/ScudoDNS/releases/latest) y ábrelo en el móvil (Android 8 o superior). Android pedirá permiso para instalar apps de origen desconocido. Las versiones nuevas se instalan encima y conservan tus listas y reglas.
+
 ## Cómo funciona
 
 - Crea una **VPN local** que solo captura el DNS. El resto del tráfico no pasa por el túnel, así que no gasta batería ni pierde velocidad, y nada sale del móvil hacia servidores de terceros.
 - Cada consulta se compara con tus listas. Si el dominio (o un dominio padre) está en ellas, responde `0.0.0.0` / `::` al instante, igual que el modo NULL de Pi-hole. Si no, la reenvía a tus DNS (por defecto Quad9 `9.9.9.9` y Cloudflare `1.1.1.1`).
-- Los dominios se guardan como hashes de 64 bits en un array ordenado: 1 millón de dominios ocupan unos 8 MB de RAM y cada búsqueda tarda microsegundos.
+- Es muy ligera: un millón de dominios bloqueados ocupan unos 8 MB de memoria y cada consulta se decide en microsegundos.
 
 ## Pestañas
 
@@ -34,26 +38,14 @@ Puedes añadir cualquier lista por URL. Se admiten estos formatos:
 Vienen de serie HaGeZi Multi PRO y StevenBlack (activadas), y el filtro DNS de AdGuard (desactivado). Se actualizan solas cada 24 h, y también puedes forzar la actualización con el botón ↻. Si una lista no ha cambiado desde la última vez, el servidor responde «sin cambios» (ETag) y no se descarga de nuevo.
 
 Algunas listas recomendadas:
-- HaGeZi Pro++ (más agresiva): `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.plus.txt`
-- HaGeZi TIF (amenazas y malware): `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/tif.txt`
-
-## Compilar
-
-**Opción A: GitHub, sin instalar nada.** Sube la carpeta a un repositorio de GitHub. La acción `.github/workflows/build.yml` pasa los tests, compila el APK y lo deja en *Actions → (última ejecución) → Artifacts*.
-
-**Antes de publicar una versión:** ejecuta una vez `crear-clave.bat` para crear tu clave de firma (se guarda en `%USERPROFILE%\.scudodns`, fuera del proyecto). Haz copia de seguridad de esa carpeta y de la contraseña: sin ellas, las actualizaciones no podrán instalarse encima de la app.
-
-**Opción B: Windows sin Android Studio.** Doble clic en `compilar.bat`. La primera vez descarga JDK 17 y el Android SDK en `%LOCALAPPDATA%\ScudoBuild` (~1 GB) y deja el APK como `ScudoDNS.apk` en la carpeta del proyecto. El registro queda en `build-log.txt`.
-
-**Opción C: Android Studio.** Abre la carpeta y ejecuta *Run* o *Build → Build APK(s)*.
-
-El APK de release va firmado con la clave de debug para que puedas instalarlo directamente. Si lo compilas en sitios distintos (por ejemplo en GitHub y en tu PC), cada uno usa una clave diferente: tendrás que desinstalar la app antes de instalar la otra versión.
+- HaGeZi Pro++ (más agresiva): `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.plus-onlydomains.txt`
+- HaGeZi TIF (amenazas y malware): `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/tif-onlydomains.txt`
 
 ## Ajustes del móvil para que no se escape nada
 
-1. **Ajustes → Conexión y uso compartido → DNS privado → Desactivado.** Si tiene un servidor puesto (p. ej. `dns.adguard.com`), Android manda el DNS cifrado por la VPN y **se queda sin Internet**. La tarjeta Diagnóstico avisa si está activo.
+1. **DNS privado de Android → Desactivado** (la ruta cambia según la marca; está explicada en la [guía de instalación](https://github.com/rehxio/ScudoDNS/wiki/Instalación)). Si tiene un servidor puesto (p. ej. `dns.adguard.com`), Android manda el DNS cifrado por la VPN y **se queda sin Internet**. ScudoDNS avisa en Inicio si está activo.
 2. **Chrome → Configuración → Privacidad → Usar DNS seguro → Desactivado.** Lo mismo en Firefox (DoH) y Brave.
-3. **Ajustes → Red → VPN → ScudoDNS → VPN siempre activada.** Así arranca sola al encender el móvil.
+3. **VPN siempre activada** para ScudoDNS (en los ajustes de VPN de Android), para que arranque sola al encender el móvil.
 4. En Xiaomi, Samsung o Huawei: quita la optimización de batería para ScudoDNS.
 
 ## Limitaciones (comunes a cualquier bloqueador DNS)
@@ -62,21 +54,15 @@ El APK de release va firmado con la clave de debug para que puedas instalarlo di
 - Una app que use su propio DNS cifrado (DoH a una IP fija) se salta el filtro.
 - Solo puede haber una VPN activa a la vez en Android, así que no es compatible con WireGuard u otra VPN encendida al mismo tiempo.
 
-## Estructura
+## Compilar
 
-```
-app/src/main/java/es/rehxio/scudo/
-├── vpn/ScudoVpnService.kt   VPN local, lectura del túnel y reenvío DNS
-├── vpn/Packets.kt            Parseo y construcción de paquetes IPv4/IPv6 + UDP
-├── vpn/Dns.kt                Lectura de consultas y respuestas de bloqueo
-├── filter/ListParser.kt      Parser de formatos hosts / dominios / AdBlock
-├── filter/Blocklist.kt       Filtro en memoria (hashes ordenados) y ficheros
-├── lists/ListRepository.kt   Alta, baja, descarga y combinación de listas
-├── lists/UpdateWorker.kt     Actualización diaria (WorkManager)
-├── log/QueryLog.kt           Registro circular, filtros y paginación
-├── log/AppResolver.kt        App que hizo cada consulta (Android 10+)
-└── ui/                       Interfaz en Jetpack Compose (Inicio, Registro, Reglas)
-```
+Para quien quiera revisar el código o compilar su propia copia:
+
+- **Windows:** doble clic en `compilar.bat` (descarga lo necesario la primera vez y deja `ScudoDNS.apk` en la carpeta).
+- **Android Studio:** abre la carpeta y usa *Build → Build APK(s)*.
+- **Línea de comandos:** `./gradlew testDebugUnitTest assembleRelease`.
+
+Las copias compiladas por tu cuenta se firman con otra clave, así que no se instalan encima de la versión oficial: desinstala una antes de instalar la otra. Más detalles y la estructura del código en la [guía de compilación](https://github.com/rehxio/ScudoDNS/wiki/Compilar-desde-el-código).
 
 ## Contribuir
 

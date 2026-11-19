@@ -39,4 +39,5 @@ Si un servidor no contesta en 2 segundos se prueba el siguiente. Si no contesta 
 ## Privacidad
 
 - Ninguna consulta sale hacia servidores de ScudoDNS: no existen.
+- Para saber si hay versión nueva, la app consulta GitHub una vez al día. No envía ningún dato tuyo y se puede desactivar en *Acerca de*.
 - El registro de consultas se guarda **solo en memoria** (las últimas 10.000) y se borra al apagar la protección o con el botón de vaciar.

@@ -85,6 +85,7 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { StatusCard(running, total, stats, onToggle) }
+        item { UpdateCard(vm) }
         privateDns?.let { name -> if (running) item { PrivateDnsWarning(name) } }
         if (running && !keepAlive.batteryUnrestricted) item { KeepAliveCard() }
         if (running) item { DiagCard(diag) }
@@ -235,7 +236,7 @@ private fun PrivateDnsWarning(name: String) {
             }
             Spacer(Modifier.height(6.dp))
             Text("Android tiene activo el DNS privado ($name). Mientras esté así, las webs y apps no cargarán. " +
-                "Ve a Ajustes → Conexión y uso compartido → DNS privado → Desactivado.",
+                "Ve a los ajustes de red de Android → DNS privado → Desactivado.",
                 style = MaterialTheme.typography.bodySmall)
             TextButton(
                 onClick = {

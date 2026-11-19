@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 0.7.0
+### Actualizaciones desde la app
+- ScudoDNS avisa cuando hay una **versión nueva** (en Inicio y con una notificación discreta) y permite **descargarla e instalarla** con un toque. Android pide confirmación antes de instalar; la primera vez, también permiso para instalar apps desde ScudoDNS.
+- Antes de instalar se comprueba que el archivo viene de GitHub por HTTPS, que su huella SHA-256 coincide con la publicada, que es una versión más nueva de ScudoDNS y que está firmado con la misma clave.
+- Se comprueba una vez al día y al abrir la app (como mucho cada 6 horas). Se puede desactivar, o comprobar a mano, en *Acerca de*.
+
 ## 0.6.0 — 19/11/2026
 ### Siempre encendida
 - La protección funciona como **servicio en primer plano**, con una notificación mínima y silenciosa (con botón «Pausar»), para que Android no la cierre para liberar memoria.
@@ -32,7 +38,7 @@
 - La caché se vacía al cambiar de red o de servidores DNS. En el Registro, las respuestas servidas desde caché llevan la etiqueta «caché».
 
 ## 0.4.0 — 19/11/2026
-- La app pasa a llamarse **ScudoDNS** (paquete `es.rehxio.scudo`). Al cambiar el identificador, se instala como app nueva: desinstala antes Escudo DNS.
+- La app pasa a llamarse **ScudoDNS** (paquete `es.rehxio.scudo`). Antes se llamaba Escudo DNS.
 - Aviso en la pantalla principal, con botón a los ajustes, si el **DNS privado** de Android está activo.
 - La tarjeta Diagnóstico aparece plegada por defecto.
 - Nueva pantalla **Acerca de** (icono ⓘ arriba o enlace al final de Inicio): versión, licencia, código, guía, reportar fallos y un apartado opcional de donativos.
@@ -44,7 +50,7 @@
 - Cola de consultas acotada: una app que inunde de consultas ya no puede agotar la memoria (las sobrantes se descartan y se cuentan en Diagnóstico).
 - Las listas solo se descargan por **HTTPS**, también tras una redirección.
 - Límites frente a listas enormes o maliciosas: 150 MB por descarga, 5 millones de dominios por lista, 10 millones en total y líneas de más de 2.048 caracteres ignoradas.
-- Firma con **clave propia** guardada fuera del repositorio (`crear-clave.bat`), en lugar de la clave de pruebas.
+- Preparada la firma con **clave propia**, guardada fuera del repositorio (se usa a partir de la 0.6.0).
 - `compilar.bat` verifica la huella SHA-256 del JDK y SHA-1 de las herramientas de Android antes de usarlas.
 - GitHub Actions valida `gradle-wrapper.jar`, no guarda credenciales en el checkout y Dependabot vigila dependencias y acciones.
 - Política de seguridad (`SECURITY.md`) para reportar vulnerabilidades en privado.
@@ -52,7 +58,7 @@
 ## 0.3.1 — 19/11/2026
 - Tarjeta **Diagnóstico** en Inicio: paquetes leídos, consultas respondidas, DNS en uso, último error y aviso si el **DNS privado** de Android está activo.
 - Las conexiones TCP al DNS (DNS sobre TLS en el puerto 853 y DNS por TCP) se rechazan al instante con RST, en vez de quedarse esperando.
-- Encontrado el motivo del "sin Internet": con el DNS privado de Android en modo estricto (p. ej. `dns.adguard.com`), Android envía el DNS cifrado por la VPN y no llega a ningún sitio. Solución: desactivar el DNS privado.
+- Explicado el caso de "sin Internet con la protección activa": ocurre cuando el DNS privado de Android tiene un servidor puesto (p. ej. `dns.adguard.com`). Hay que desactivarlo.
 
 ## 0.3.0 — 19/11/2026
 - Las consultas se reenvían primero al **DNS de la red** (router, Pi-hole u operador) y después a los de respaldo (Quad9, Cloudflare).

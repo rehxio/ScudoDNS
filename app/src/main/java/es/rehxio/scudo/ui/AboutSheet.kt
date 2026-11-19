@@ -48,7 +48,7 @@ import es.rehxio.scudo.BuildConfig
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutSheet(onDismiss: () -> Unit) {
+fun AboutSheet(vm: MainViewModel, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     fun open(url: String) {
@@ -76,6 +76,8 @@ fun AboutSheet(onDismiss: () -> Unit) {
             )
 
             Spacer(Modifier.height(16.dp))
+            UpdateSettings(vm)
+            HorizontalDivider(color = cs.outlineVariant)
             LinkRow(Icons.Filled.Code, "Código fuente") { open(BuildConfig.REPO_URL) }
             HorizontalDivider(color = cs.outlineVariant)
             LinkRow(Icons.AutoMirrored.Filled.MenuBook, "Guía y ayuda") { open("${BuildConfig.REPO_URL}/wiki") }

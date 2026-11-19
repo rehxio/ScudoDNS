@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.first
 import android.os.PowerManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.Context
+import es.rehxio.scudo.update.AppUpdater
+import es.rehxio.scudo.update.UpdateState
 
 /** Lo que hace falta para que Android no cierre la protección. */
 data class KeepAlive(val batteryUnrestricted: Boolean)
@@ -72,9 +75,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _logPage = MutableStateFlow(LogPage(emptyList(), 0, 1, 0, 0, 0))
     val logPage: StateFlow<LogPage> = _logPage
 
+    // ---------- Versión nueva ----------
+
+    val update: StateFlow<UpdateState> = AppUpdater.state
+    private val _autoUpdate = MutableStateFlow(AppUpdater.isAutoCheck(app))
+    val autoUpdate: StateFlow<Boolean> = _autoUpdate
+
+    fun setAutoUpdate(on: Boolean) {
+        AppUpdater.setAutoCheck(getApplication(), on)
+        _autoUpdate.value = on
+    }
+    fun checkUpdate() = viewModelScope.launch { AppUpdater.check(getApplication(), notify = false) }
+    fun downloadUpdate() {
+        val s = update.value
+        val info = when (s) { is UpdateState.Available -> s.info; is UpdateState.Failed -> s.info; else -> null } ?: return
+        viewModelScope.launch { AppUpdater.download(getApplication(), info) }
+    }
+    /** Necesita el contexto de la pantalla para abrir el instalador. false = falta conceder el permiso. */
+    fun installUpdate(ctx: Context): Boolean {
+        val s = update.value as? UpdateState.Ready ?: return false
+        return AppUpdater.install(ctx, s.file)
+    }
+    fun dismissUpdate() = AppUpdater.dismiss()
+
     init {
         // Primera ejecución (o listas que fallaron): las descargamos.
         viewModelScope.launch { repo.updateMissing() }
+        viewModelScope.launch { AppUpdater.checkIfDue(getApplication()) }
         viewModelScope.launch {
             while (true) {
                 visible.first { it } // en segundo plano se queda dormido sin consumir

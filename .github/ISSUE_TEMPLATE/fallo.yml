@@ -32,8 +32,8 @@ body:
     id: version
     attributes:
       label: Versión de ScudoDNS
-      description: La ves en Ajustes de Android → Apps → ScudoDNS.
-      placeholder: "0.4.0"
+      description: La ves en ScudoDNS → Acerca de (icono ⓘ arriba).
+      placeholder: "0.6.0"
     validations:
       required: true
 
