@@ -1,7 +1,18 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+// Clave de firma propia. Se guarda FUERA del repositorio (por defecto en ~/.scudodns/keystore.properties,
+// que crea crear-clave.bat) para que nunca acabe en GitHub. Sin ella se firma con la clave de pruebas.
+val releaseKey = Properties().apply {
+    val path = System.getenv("SCUDO_KEYSTORE_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.scudodns/keystore.properties"
+    val f = file(path)
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -12,8 +23,8 @@ android {
         applicationId = "es.rehxio.scudo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.4.0"
+        versionCode = 6
+        versionName = "0.5.0"
 
         // Enlaces de "Acerca de". El de donaciones se configura en gradle.properties (scudo.donateUrl);
         // si está vacío, la sección de donativos no aparece en la app.
@@ -21,13 +32,25 @@ android {
         buildConfigField("String", "DONATE_URL", "\"${project.findProperty("scudo.donateUrl") ?: ""}\"")
     }
 
+    signingConfigs {
+        if (!releaseKey.isEmpty()) create("release") {
+            storeFile = file(releaseKey.getProperty("storeFile"))
+            storePassword = releaseKey.getProperty("storePassword")
+            keyAlias = releaseKey.getProperty("keyAlias")
+            keyPassword = releaseKey.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // Firmado con la clave de debug para poder instalar el APK directamente.
-            // Cambia esto por tu propia clave si algún día lo publicas.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (!releaseKey.isEmpty()) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn("AVISO: sin clave propia; el APK se firma con la clave de pruebas (ejecuta crear-clave.bat)")
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

@@ -11,6 +11,15 @@ New-Item -ItemType Directory -Force $tool | Out-Null
 Start-Transcript -Path (Join-Path $root 'build-log.txt') -Force | Out-Null
 
 function Step($t) { Write-Host "`n==== $t ====" -ForegroundColor Cyan }
+function Verify($file, $algo, $expected) {
+    $actual = (Get-FileHash -Path $file -Algorithm $algo).Hash.ToLower()
+    if ($actual -ne $expected.Trim().ToLower()) {
+        Remove-Item $file -Force
+        throw "La huella $algo de $(Split-Path $file -Leaf) no coincide. Descarga descartada por seguridad."
+    }
+    Write-Host "Huella $algo verificada: $(Split-Path $file -Leaf)"
+}
+
 function Download($url, $out) {
     Write-Host "Descargando $url"
     & curl.exe -L --fail --retry 3 -o $out $url
@@ -23,7 +32,17 @@ try {
     if (-not (Test-Path "$jdk\bin\java.exe")) {
         Step 'Descargando JDK 17 (Microsoft OpenJDK)'
         $zip = Join-Path $tool 'jdk.zip'
-        Download 'https://aka.ms/download-jdk/microsoft-jdk-17-windows-x64.zip' $zip
+        $jdkUrl = 'https://aka.ms/download-jdk/microsoft-jdk-17-windows-x64.zip'
+        Download $jdkUrl $zip
+        # Microsoft publica la huella SHA-256 junto al ZIP.
+        $sumFile = Join-Path $tool 'jdk.sha256.txt'
+        & curl.exe -L --fail --silent -o $sumFile "$jdkUrl.sha256sum.txt"
+        if ($LASTEXITCODE -eq 0) {
+            Verify $zip 'SHA256' ((Get-Content $sumFile -Raw).Trim().Split(' ')[0])
+            Remove-Item $sumFile -Force
+        } else {
+            Write-Host 'AVISO: no se pudo obtener la huella del JDK; se confia en la conexion HTTPS.' -ForegroundColor Yellow
+        }
         $tmp = Join-Path $tool 'jdk-tmp'
         if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
         Expand-Archive $zip $tmp
@@ -40,17 +59,24 @@ try {
     if (-not (Test-Path $sdkm)) {
         Step 'Descargando Android SDK command-line tools'
         $url = $null
+        $sha1 = $null
         try {
             $xmlFile = Join-Path $tool 'repo.xml'
             Download 'https://dl.google.com/android/repository/repository2-3.xml' $xmlFile
             [xml]$repo = Get-Content $xmlFile
             $pkg = $repo.SelectNodes('//remotePackage') | Where-Object { $_.path -eq 'cmdline-tools;latest' } | Select-Object -First 1
-            $file = ($pkg.archives.archive | Where-Object { $_.'host-os' -eq 'windows' } | Select-Object -First 1).complete.url
-            if ($file) { $url = "https://dl.google.com/android/repository/$file" }
+            $complete = ($pkg.archives.archive | Where-Object { $_.'host-os' -eq 'windows' } | Select-Object -First 1).complete
+            if ($complete.url) {
+                $url = "https://dl.google.com/android/repository/$($complete.url)"
+                $sha1 = $complete.checksum.'#text'
+                if (-not $sha1) { $sha1 = [string]$complete.checksum }
+            }
         } catch { Write-Host "No se pudo leer el catalogo, uso la version conocida" }
         if (-not $url) { $url = 'https://dl.google.com/android/repository/commandlinetools-win-13114758_latest.zip' }
         $zip = Join-Path $tool 'cmdline.zip'
         Download $url $zip
+        if ($sha1) { Verify $zip 'SHA1' $sha1 }
+        else { Write-Host 'AVISO: sin huella del catalogo de Google; se confia en la conexion HTTPS.' -ForegroundColor Yellow }
         $tmp = Join-Path $tool 'cmdline-tmp'
         if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
         Expand-Archive $zip $tmp

@@ -14,6 +14,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FilterInputStream
+import java.io.InputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -82,7 +84,9 @@ class ListRepository private constructor(context: Context) {
     // ---------- Gestión de listas ----------
 
     suspend fun add(name: String, url: String) {
-        val list = FilterList(UUID.randomUUID().toString(), name.ifBlank { url }, url.trim(), enabled = true)
+        val clean = url.trim()
+        if (!isHttpsUrl(clean)) return // la interfaz ya lo impide; aquí no se aceptan URL que no sean https
+        val list = FilterList(UUID.randomUUID().toString(), name.ifBlank { clean }, clean, enabled = true)
         mutate { it + list }
         update(listOf(list))
     }
@@ -142,12 +146,14 @@ class ListRepository private constructor(context: Context) {
     private fun download(l: FilterList): es.rehxio.scudo.filter.ParseResult? {
         var target = URL(l.url)
         val haveFile = File(dir, "${l.id}.block").exists()
-        repeat(5) { // seguimos redirecciones a mano (HttpURLConnection no cambia de http a https)
+        repeat(5) { // seguimos redirecciones a mano para poder comprobar cada destino
+            // Solo HTTPS: una lista por HTTP podría ser alterada por cualquiera en la red.
+            if (target.protocol != "https") throw IOException("Solo se admiten listas por https://")
             val conn = target.openConnection() as HttpURLConnection
             conn.connectTimeout = 15_000
             conn.readTimeout = 60_000
             conn.instanceFollowRedirects = false
-            conn.setRequestProperty("User-Agent", "ScudoDNS/0.2 (Android)")
+            conn.setRequestProperty("User-Agent", "ScudoDNS (Android)")
             if (haveFile) {
                 prefs.getString("etag_${l.id}", null)?.let { conn.setRequestProperty("If-None-Match", it) }
                 prefs.getString("lastmod_${l.id}", null)?.let { conn.setRequestProperty("If-Modified-Since", it) }
@@ -161,7 +167,9 @@ class ListRepository private constructor(context: Context) {
                     return@repeat
                 }
                 if (code !in 200..299) throw IOException("HTTP $code")
-                val result = conn.inputStream.bufferedReader().use { ListParser.parse(it) }
+                val declared = conn.getHeaderField("Content-Length")?.toLongOrNull()
+                if (declared != null && declared > MAX_LIST_BYTES) throw IOException("La lista supera ${MAX_LIST_BYTES / 1_000_000} MB")
+                val result = LimitedInputStream(conn.inputStream, MAX_LIST_BYTES).reader().use { ListParser.parse(it) }
                 if (result.block.isEmpty() && result.allow.isEmpty()) throw IOException("La lista no contiene dominios válidos")
                 prefs.edit()
                     .putString("etag_${l.id}", conn.getHeaderField("ETag"))
@@ -181,9 +189,27 @@ class ListRepository private constructor(context: Context) {
     private fun rebuildLocked() {
         val block = LongArrayBuilder(256 * 1024)
         val allow = LongArrayBuilder(1024)
+        val skipped = mutableSetOf<String>()
         for (l in _lists.value.filter { it.enabled }) {
-            block.addAll(Blocklist.readLongs(File(dir, "${l.id}.block")))
-            allow.addAll(Blocklist.readLongs(File(dir, "${l.id}.allow")))
+            val lb = Blocklist.readLongs(File(dir, "${l.id}.block"))
+            val la = Blocklist.readLongs(File(dir, "${l.id}.allow"))
+            // Tope global para no agotar la memoria al combinar muchas listas grandes.
+            if (block.size + allow.size + lb.size + la.size > MAX_TOTAL_RULES) {
+                skipped += l.id
+                continue
+            }
+            block.addAll(lb)
+            allow.addAll(la)
+        }
+        val limitMsg = "No se aplica: se supera el máximo de ${MAX_TOTAL_RULES / 1_000_000} millones de dominios entre todas las listas"
+        if (skipped.isNotEmpty() || _lists.value.any { it.error == limitMsg }) mutate { all ->
+            all.map {
+                when {
+                    it.id in skipped -> it.copy(error = limitMsg)
+                    it.error == limitMsg -> it.copy(error = null)
+                    else -> it
+                }
+            }
         }
         val b = block.toSortedUnique()
         val a = allow.toSortedUnique()
@@ -237,6 +263,15 @@ class ListRepository private constructor(context: Context) {
     }
 
     companion object {
+        /** Tamaño máximo de una lista ya descomprimida (las más grandes rondan 30-60 MB). */
+        const val MAX_LIST_BYTES = 150_000_000L
+
+        /** Máximo de reglas sumando todas las listas activas (~80 MB al combinarlas). */
+        const val MAX_TOTAL_RULES = 10_000_000
+
+        fun isHttpsUrl(url: String): Boolean =
+            runCatching { URL(url).let { it.protocol == "https" && !it.host.isNullOrBlank() } }.getOrDefault(false)
+
         const val HAGEZI_PRO_URL = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt"
         private const val HAGEZI_OLD_URL = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.txt"
 
@@ -255,4 +290,20 @@ class ListRepository private constructor(context: Context) {
                 instance ?: ListRepository(context.applicationContext).also { instance = it }
             }
     }
+}
+
+/** Corta la lectura con un error si se superan [limit] bytes (protege frente a descargas gigantes). */
+private class LimitedInputStream(private val inner: InputStream, private val limit: Long) : FilterInputStream(inner) {
+    private var count = 0L
+
+    private fun add(n: Long) {
+        if (n > 0) {
+            count += n
+            if (count > limit) throw IOException("La lista supera ${limit / 1_000_000} MB")
+        }
+    }
+
+    override fun read(): Int = super.read().also { if (it >= 0) add(1) }
+    override fun read(b: ByteArray, off: Int, len: Int): Int = super.read(b, off, len).also { add(it.toLong()) }
+    override fun skip(n: Long): Long = super.skip(n).also { add(it) }
 }

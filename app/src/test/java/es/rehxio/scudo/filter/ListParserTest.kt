@@ -83,3 +83,32 @@ class UserRulesTest {
         Blocklist.setUserRules(emptySet(), emptySet())
     }
 }
+
+class ListLimitsTest {
+    @Test fun overlongLinesAreIgnoredWithoutBreakingTheRest() {
+        val huge = "a".repeat(ListParser.MAX_LINE * 10)
+        val r = ListParser.parse("$huge\nads.example.com\n${huge}.com\n||tracker.net^".reader())
+        assertEquals(2, r.block.size)
+    }
+
+    @Test fun tooManyRulesIsRejected() {
+        val many = object : java.io.Reader() {
+            var i = 0
+            var pending = ""
+            override fun read(cbuf: CharArray, off: Int, len: Int): Int {
+                if (pending.isEmpty()) {
+                    if (i > ListParser.MAX_RULES + 10) return -1
+                    pending = "d${i++}.example.com\n"
+                }
+                val n = minOf(len, pending.length)
+                pending.toCharArray(cbuf, off, 0, n)
+                pending = pending.substring(n)
+                return n
+            }
+            override fun close() {}
+        }
+        var thrown = false
+        try { ListParser.parse(many) } catch (e: ListTooLargeException) { thrown = true }
+        assertTrue(thrown)
+    }
+}

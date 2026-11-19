@@ -10,6 +10,8 @@ class LogEntry(
     val app: String?,
     /** true si ningún servidor DNS respondió a esta consulta. */
     val failed: Boolean = false,
+    /** true si se contestó desde la caché de ScudoDNS, sin salir a la red. */
+    val cached: Boolean = false,
 ) {
     val typeName: String get() = when (qtype) {
         1 -> "A"; 28 -> "AAAA"; 5 -> "CNAME"; 12 -> "PTR"; 15 -> "MX"; 16 -> "TXT"

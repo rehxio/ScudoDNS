@@ -41,6 +41,8 @@ Algunas listas recomendadas:
 
 **Opción A: GitHub, sin instalar nada.** Sube la carpeta a un repositorio de GitHub. La acción `.github/workflows/build.yml` pasa los tests, compila el APK y lo deja en *Actions → (última ejecución) → Artifacts*.
 
+**Antes de publicar una versión:** ejecuta una vez `crear-clave.bat` para crear tu clave de firma (se guarda en `%USERPROFILE%\.scudodns`, fuera del proyecto). Haz copia de seguridad de esa carpeta y de la contraseña: sin ellas, las actualizaciones no podrán instalarse encima de la app.
+
 **Opción B: Windows sin Android Studio.** Doble clic en `compilar.bat`. La primera vez descarga JDK 17 y el Android SDK en `%LOCALAPPDATA%\ScudoBuild` (~1 GB) y deja el APK como `ScudoDNS.apk` en la carpeta del proyecto. El registro queda en `build-log.txt`.
 
 **Opción C: Android Studio.** Abre la carpeta y ejecuta *Run* o *Build → Build APK(s)*.
@@ -79,6 +81,10 @@ app/src/main/java/es/rehxio/scudo/
 ## Contribuir
 
 Los fallos y las ideas se recogen en [Issues](https://github.com/rehxio/ScudoDNS/issues), con plantillas que piden lo necesario para reproducirlos. Las propuestas de código llegan como pull request: cada una se revisa antes de incorporarse, y GitHub Actions comprueba que compila y pasa los tests.
+
+## Seguridad
+
+Para reportar una vulnerabilidad, consulta [SECURITY.md](SECURITY.md). No abras una issue pública.
 
 ## Licencia
 

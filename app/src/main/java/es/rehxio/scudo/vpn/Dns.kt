@@ -38,6 +38,28 @@ object Dns {
     /** ID de la consulta/respuesta (para no aceptar respuestas que no corresponden). */
     fun id(b: ByteArray, off: Int = 0): Int = u16(b, off)
 
+    /**
+     * ¿Es [r] la respuesta a [query]? Mismo ID, bit de respuesta activo y la misma pregunta
+     * (nombre, tipo y clase; el nombre sin distinguir mayúsculas). Evita aceptar respuestas
+     * falsificadas o que pertenecen a otra consulta.
+     */
+    fun isResponseTo(r: ByteArray, len: Int, query: ByteArray, q: DnsQuery?): Boolean {
+        if (len < 12 || len > r.size || query.size < 12) return false
+        if (u16(r, 0) != u16(query, 0)) return false
+        if (r[2].toInt() and 0x80 == 0) return false
+        if (q == null) return true // consulta que no supimos leer: basta con el ID
+        val end = q.questionEnd
+        if (len < end || u16(r, 4) != 1) return false
+        for (i in 12 until end) {
+            var a = r[i].toInt() and 0xFF
+            var b = query[i].toInt() and 0xFF
+            if (a in 65..90) a += 32
+            if (b in 65..90) b += 32
+            if (a != b) return false
+        }
+        return true
+    }
+
     /** Respuesta SERVFAIL: el móvil sabe al instante que falló y reintenta, en vez de quedarse colgado. */
     fun servfail(b: ByteArray, off: Int, q: DnsQuery): ByteArray {
         val out = ByteArray(q.questionEnd)

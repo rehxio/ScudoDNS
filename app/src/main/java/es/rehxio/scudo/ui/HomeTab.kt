@@ -58,6 +58,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.ui.platform.LocalContext
 import es.rehxio.scudo.lists.FilterList
+import es.rehxio.scudo.lists.ListRepository
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.util.Date
@@ -289,7 +290,7 @@ private fun ListCard(l: FilterList, onEnabled: (Boolean) -> Unit, onDelete: () -
 internal fun AddListDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
-    val valid = url.startsWith("https://") || url.startsWith("http://")
+    val valid = ListRepository.isHttpsUrl(url)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Añadir lista") },
@@ -297,7 +298,9 @@ internal fun AddListDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Uni
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(name, { name = it }, label = { Text("Nombre (opcional)") }, singleLine = true)
                 OutlinedTextField(url, { url = it.trim() }, label = { Text("URL de la lista") }, singleLine = true,
-                    placeholder = { Text("https://…/lista.txt") })
+                    placeholder = { Text("https://…/lista.txt") },
+                    isError = url.isNotEmpty() && !valid,
+                    supportingText = if (url.isNotEmpty() && !valid) {{ Text("Tiene que ser una dirección https://") }} else null)
                 Text("Formatos: hosts, un dominio por línea o AdBlock (||dominio^). Las reglas @@|| se usan como lista blanca.",
                     style = MaterialTheme.typography.bodySmall)
             }

@@ -166,7 +166,8 @@ private fun LogRow(e: LogEntry, rules: UserRules, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(e.domain, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(listOfNotNull(formatTime(e.time), e.typeName, e.app, if (e.failed) "sin respuesta" else null).joinToString(" · "),
+            Text(listOfNotNull(formatTime(e.time), e.typeName, e.app, if (e.failed) "sin respuesta" else null,
+                if (e.cached) "caché" else null).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
         }

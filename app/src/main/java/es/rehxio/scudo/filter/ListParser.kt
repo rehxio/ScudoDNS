@@ -1,8 +1,11 @@
 package es.rehxio.scudo.filter
 
-import java.io.BufferedReader
+import java.io.IOException
+import java.io.Reader
 
 class ParseResult(val block: LongArray, val allow: LongArray)
+
+class ListTooLargeException(message: String) : IOException(message)
 
 /**
  * Entiende los formatos habituales de listas de bloqueo:
@@ -22,15 +25,44 @@ object ListParser {
     )
     private val ALLOWED_MODIFIERS = setOf("important", "all", "document", "doc")
 
-    fun parse(reader: BufferedReader): ParseResult {
+    /** Máximo de reglas por lista: protege la memoria frente a listas enormes o maliciosas. */
+    const val MAX_RULES = 5_000_000
+
+    /** Las líneas más largas se ignoran (ningún dominio pasa de 253 caracteres). */
+    const val MAX_LINE = 2048
+
+    /**
+     * Lee la lista carácter a carácter, sin cargar nunca una línea entera si es desmesurada,
+     * y corta con [ListTooLargeException] si supera [MAX_RULES] reglas.
+     */
+    fun parse(reader: Reader): ParseResult {
         val block = LongArrayBuilder(64 * 1024)
         val allow = LongArrayBuilder(256)
-        reader.forEachLine { line ->
-            parseLine(line) { domain, isAllow ->
-                val h = DomainHash.hash(domain)
-                if (isAllow) allow.add(h) else block.add(h)
+        val emit = { domain: String, isAllow: Boolean ->
+            if (block.size + allow.size >= MAX_RULES) {
+                throw ListTooLargeException("La lista tiene más de ${MAX_RULES / 1_000_000} millones de dominios")
+            }
+            val h = DomainHash.hash(domain)
+            if (isAllow) allow.add(h) else block.add(h)
+        }
+        val line = StringBuilder(256)
+        var overlong = false
+        val buf = CharArray(16 * 1024)
+        while (true) {
+            val n = reader.read(buf)
+            if (n < 0) break
+            for (i in 0 until n) {
+                val c = buf[i]
+                if (c == '\n') {
+                    if (!overlong && line.isNotEmpty()) parseLine(line.toString(), emit)
+                    line.setLength(0)
+                    overlong = false
+                } else if (!overlong) {
+                    if (line.length >= MAX_LINE) overlong = true else line.append(c)
+                }
             }
         }
+        if (!overlong && line.isNotEmpty()) parseLine(line.toString(), emit)
         return ParseResult(block.toSortedUnique(), allow.toSortedUnique())
     }
 

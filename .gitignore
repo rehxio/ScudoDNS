@@ -8,3 +8,8 @@ local.properties
 build-log.txt
 build-status.txt
 .kotlin/
+# Claves de firma: nunca al repositorio
+*.jks
+*.keystore
+*.p12
+keystore.properties

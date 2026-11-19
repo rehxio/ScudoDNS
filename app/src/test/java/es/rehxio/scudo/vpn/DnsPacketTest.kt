@@ -2,7 +2,9 @@ package es.rehxio.scudo.vpn
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DnsPacketTest {
@@ -112,5 +114,38 @@ class TcpRstTest {
         assertEquals(0x1001, Packets.u16(rst, 30))  // ack = seq + 1
         assertEquals(0x14, rst[33].toInt())
         assertEquals("TCP→853 (IPv4)", Packets.describe(syn, syn.size))
+    }
+}
+
+class ResponseValidationTest {
+    private fun query(): ByteArray {
+        val name = byteArrayOf(3) + "ads".toByteArray() + byteArrayOf(7) + "example".toByteArray() +
+            byteArrayOf(3) + "com".toByteArray() + byteArrayOf(0)
+        return byteArrayOf(0x12, 0x34, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0) + name + byteArrayOf(0, 1, 0, 1)
+    }
+
+    @Test fun acceptsTheRealAnswerOnly() {
+        val q = query()
+        val parsed = Dns.parseQuery(q, 0, q.size)!!
+        val ok = Dns.blockedResponse(q, 0, parsed) // respuesta válida: mismo ID y pregunta
+        assertTrue(Dns.isResponseTo(ok, ok.size, q, parsed))
+
+        val upper = ok.copyOf().also { it[13] = 'A'.code.toByte() } // mayúsculas: se acepta
+        assertTrue(Dns.isResponseTo(upper, upper.size, q, parsed))
+
+        val wrongId = ok.copyOf().also { it[1] = 0x35 }
+        assertFalse(Dns.isResponseTo(wrongId, wrongId.size, q, parsed))
+
+        val notResponse = ok.copyOf().also { it[2] = 0x01 }
+        assertFalse(Dns.isResponseTo(notResponse, notResponse.size, q, parsed))
+
+        val otherName = ok.copyOf().also { it[14] = 'x'.code.toByte() }
+        assertFalse(Dns.isResponseTo(otherName, otherName.size, q, parsed))
+
+        val otherType = ok.copyOf().also { it[parsed.questionEnd - 3] = 28 }
+        assertFalse(Dns.isResponseTo(otherType, otherType.size, q, parsed))
+
+        assertFalse(Dns.isResponseTo(ok, 11, q, parsed)) // demasiado corta
+        assertFalse(Dns.isResponseTo(ok, ok.size + 5, q, parsed)) // longitud imposible
     }
 }

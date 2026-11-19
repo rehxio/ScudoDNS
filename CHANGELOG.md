@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## 0.5.0 — 19/11/2026
+### Rendimiento
+- **Caché DNS propia**: las consultas repetidas se contestan al instante, respetando el TTL de cada respuesta. También se guardan las respuestas negativas (NXDOMAIN) según su SOA.
+- **Respuestas caducadas al instante** (RFC 8767): si una respuesta acaba de caducar se entrega la anterior con TTL corto y se actualiza en segundo plano.
+- **Consultas escalonadas**: si el primer servidor DNS no contesta en un tiempo algo mayor de lo habitual (60–400 ms según lo que suela tardar), se pregunta también al siguiente y gana la primera respuesta. Antes había que esperar 2 s.
+- Los servidores que fallan varias veces seguidas pasan al final de la lista.
+- La app que hace cada consulta se averigua en paralelo cuando hay que salir a la red, sin retrasar la respuesta.
+- La caché se vacía al cambiar de red o de servidores DNS. En el Registro, las respuestas servidas desde caché llevan la etiqueta «caché».
+
 ## 0.4.0 — 19/11/2026
 - La app pasa a llamarse **ScudoDNS** (paquete `es.rehxio.scudo`). Al cambiar el identificador, se instala como app nueva: desinstala antes Escudo DNS.
 - Aviso en la pantalla principal, con botón a los ajustes, si el **DNS privado** de Android está activo.
@@ -7,6 +16,16 @@
 - Nueva pantalla **Acerca de** (icono ⓘ arriba o enlace al final de Inicio): versión, licencia, código, guía, reportar fallos y un apartado opcional de donativos.
 - Licencia **GPL-3.0**: ScudoDNS pasa a ser software libre.
 - Web del proyecto (`docs/`, GitHub Pages), wiki (`wiki/`), plantillas de issues y pull requests, y compilación automática en GitHub Actions.
+
+### Seguridad
+- Las respuestas DNS solo se aceptan del servidor al que se preguntó (socket conectado) y si coinciden en ID, tipo de mensaje y pregunta: se impide colar respuestas falsificadas desde la red.
+- Cola de consultas acotada: una app que inunde de consultas ya no puede agotar la memoria (las sobrantes se descartan y se cuentan en Diagnóstico).
+- Las listas solo se descargan por **HTTPS**, también tras una redirección.
+- Límites frente a listas enormes o maliciosas: 150 MB por descarga, 5 millones de dominios por lista, 10 millones en total y líneas de más de 2.048 caracteres ignoradas.
+- Firma con **clave propia** guardada fuera del repositorio (`crear-clave.bat`), en lugar de la clave de pruebas.
+- `compilar.bat` verifica la huella SHA-256 del JDK y SHA-1 de las herramientas de Android antes de usarlas.
+- GitHub Actions valida `gradle-wrapper.jar`, no guarda credenciales en el checkout y Dependabot vigila dependencias y acciones.
+- Política de seguridad (`SECURITY.md`) para reportar vulnerabilidades en privado.
 
 ## 0.3.1 — 19/11/2026
 - Tarjeta **Diagnóstico** en Inicio: paquetes leídos, consultas respondidas, DNS en uso, último error y aviso si el **DNS privado** de Android está activo.
