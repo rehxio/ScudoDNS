@@ -86,6 +86,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /** El usuario puede ocultar la tarjeta "Que no se cierre nunca"; vuelve desde Acerca de. */
+    private val _keepAliveHidden = MutableStateFlow(
+        app.getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE).getBoolean("keepAliveHidden", false))
+    val keepAliveHidden: StateFlow<Boolean> = _keepAliveHidden
+    fun setKeepAliveHidden(hidden: Boolean) {
+        getApplication<Application>().getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("keepAliveHidden", hidden).apply()
+        _keepAliveHidden.value = hidden
+    }
+
     /** En Xiaomi no se puede comprobar el inicio automático: el usuario confirma que lo ha activado. */
     fun confirmAutostart() {
         getApplication<Application>().getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)

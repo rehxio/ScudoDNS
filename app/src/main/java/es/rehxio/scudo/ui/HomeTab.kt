@@ -77,6 +77,7 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
     val diag by vm.diag.collectAsState()
     val privateDns by vm.privateDns.collectAsState()
     val keepAlive by vm.keepAlive.collectAsState()
+    val keepAliveHidden by vm.keepAliveHidden.collectAsState()
     var toDelete by remember { mutableStateOf<FilterList?>(null) }
 
     LazyColumn(
@@ -87,7 +88,9 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
         item { StatusCard(running, total, stats, onToggle) }
         item { UpdateCard(vm) }
         privateDns?.let { name -> if (running) item { PrivateDnsWarning(name) } }
-        if (running && !keepAlive.complete) item { KeepAliveCard(keepAlive, onAutostartDone = vm::confirmAutostart) }
+        if (running && !keepAlive.complete && !keepAliveHidden) item {
+            KeepAliveCard(keepAlive, onAutostartDone = vm::confirmAutostart, onHide = { vm.setKeepAliveHidden(true) })
+        }
         if (running) item { DiagCard(diag) }
         item {
             Row(Modifier.padding(top = 14.dp, start = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.Bottom) {

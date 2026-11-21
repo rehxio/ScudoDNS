@@ -104,7 +104,10 @@ try {
     Set-Content -Path (Join-Path $root 'local.properties') -Value "sdk.dir=$sdkEsc" -Encoding ASCII
     Step 'Compilando (la primera vez tarda varios minutos)'
     Push-Location $root
-    & .\gradlew.bat --no-daemon testDebugUnitTest assembleRelease
+    # La salida de Gradle (incluidos los errores de compilacion) queda tambien en build-log.txt
+    $ErrorActionPreference = 'Continue'
+    & .\gradlew.bat --no-daemon testDebugUnitTest assembleRelease 2>&1 | ForEach-Object { "$_" } | Out-Host
+    $ErrorActionPreference = 'Stop'
     $code = $LASTEXITCODE
     Pop-Location
     if ($code -ne 0) { throw "Gradle termino con error $code" }

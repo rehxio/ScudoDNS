@@ -51,13 +51,29 @@ import androidx.compose.ui.unit.dp
 fun RulesTab(vm: MainViewModel, modifier: Modifier) {
     val rules by vm.rules.collectAsState()
     var input by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var added by remember { mutableStateOf<String?>(null) }
 
+    // Admite varios dominios a la vez, separados por espacios, comas, punto y coma o saltos de línea.
     fun addRule(block: Boolean) {
-        val d = vm.cleanDomain(input)
-        if (d == null) { error = true; return }
-        if (block) vm.block(d) else vm.allow(d)
-        input = ""
+        val tokens = input.split(Regex("[\\s,;|]+")).filter { it.isNotBlank() }
+        val valid = LinkedHashSet<String>()
+        val invalid = ArrayList<String>()
+        for (t in tokens) vm.cleanDomain(t)?.let { valid += it } ?: invalid.add(t)
+        if (valid.isEmpty()) {
+            error = "Escribe un dominio válido, por ejemplo ads.ejemplo.com"
+            return
+        }
+        valid.forEach { if (block) vm.block(it) else vm.allow(it) }
+        added = (if (valid.size == 1) "Añadido ${valid.first()}" else "Añadidos ${valid.size} dominios") +
+            (if (block) " a bloqueados." else " a permitidos.")
+        if (invalid.isEmpty()) {
+            input = ""
+            error = null
+        } else {
+            input = invalid.joinToString("\n")
+            error = "Estos no son dominios válidos y no se han añadido."
+        }
     }
 
     LazyColumn(
@@ -71,14 +87,19 @@ fun RulesTab(vm: MainViewModel, modifier: Modifier) {
                 border = CardDefaults.outlinedCardBorder()) {
                 Column(Modifier.padding(16.dp)) {
                     Text("Añadir regla", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Tus reglas mandan sobre las listas y afectan también a los subdominios.",
+                    Text("Tus reglas mandan sobre las listas y afectan también a los subdominios. " +
+                        "Puedes pegar varios dominios a la vez, uno por línea o separados por comas.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
-                        input, { input = it; error = false }, singleLine = true, isError = error,
+                        input, { input = it; error = null; added = null }, maxLines = 6, isError = error != null,
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                         placeholder = { Text("ejemplo.com") },
-                        supportingText = if (error) {{ Text("Escribe un dominio válido, por ejemplo ads.ejemplo.com") }} else null,
+                        supportingText = when {
+                            error != null -> {{ Text(error!!) }}
+                            added != null -> {{ Text(added!!) }}
+                            else -> null
+                        },
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

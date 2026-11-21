@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 0.8.1
+- La tarjeta **«Que no se cierre nunca»** ocupa ahora una sola línea con el progreso («1 de 3») y se despliega al tocarla.
+- Se puede ocultar con **«No mostrar más»**; vuelve a aparecer desde *Acerca de*.
+- En **Reglas** se pueden pegar **varios dominios a la vez** (uno por línea, o separados por espacios o comas). Los que no son válidos se quedan en el campo para corregirlos.
+
 ## 0.8.0
 - La tarjeta **«Que no se cierre nunca»** es ahora una lista de pasos con accesos directos a la opción de ScudoDNS:
   - **Sin ahorro de batería**: abre directamente el aviso de Android para esta app (y, en Xiaomi, también su ajuste de batería propio).

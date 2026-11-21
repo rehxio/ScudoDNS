@@ -33,7 +33,7 @@ Algunas apps guardan la respuesta DNS un minuto, así que el cambio puede tardar
 
 Aquí ves y gestionas tus reglas a mano:
 
-- **Añadir regla**: escribe un dominio y pulsa Bloquear o Permitir. También admite que pegues una URL; se queda con el dominio.
+- **Añadir regla**: escribe un dominio y pulsa Bloquear o Permitir. Puedes pegar varios a la vez (uno por línea, o separados por espacios o comas) y también URLs; se queda con el dominio. No admite expresiones regulares.
 - **Bloqueados por ti** y **Permitidos por ti**: pulsa ✕ para quitar una regla.
 
 Orden de prioridad:

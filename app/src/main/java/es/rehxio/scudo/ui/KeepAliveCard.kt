@@ -6,7 +6,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Card
@@ -26,6 +29,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -78,54 +85,67 @@ object SystemShortcuts {
 }
 
 /**
- * Lista de pasos para que la protección no se cierre nunca. Cada paso abre su ajuste
- * y se marca como hecho en cuanto Android lo confirma (al volver a la app).
+ * Pasos para que la protección no se cierre nunca. Plegada por defecto en una sola línea con el
+ * progreso; al tocarla se despliegan los pasos. Se puede ocultar para siempre (vuelve desde Acerca de).
  */
 @Composable
-fun KeepAliveCard(state: KeepAlive, onAutostartDone: () -> Unit) {
+fun KeepAliveCard(state: KeepAlive, onAutostartDone: () -> Unit, onHide: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
+    var open by remember { mutableStateOf(false) }
+    val steps = listOfNotNull(
+        state.batteryUnrestricted,
+        if (state.isXiaomi) state.autostartDone else null,
+        state.vpnAlwaysOn ?: false,
+    )
     Card(
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = cs.secondaryContainer, contentColor = cs.onSecondaryContainer),
-        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = cs.surfaceContainerLow),
+        modifier = Modifier.fillMaxWidth().clickable { open = !open },
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Que no se cierre nunca", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(2.dp))
-            Text("Android puede cerrar ScudoDNS para ahorrar batería. Con estos ajustes se mantiene siempre encendida.",
-                style = MaterialTheme.typography.bodySmall)
-
-            Step(
-                done = state.batteryUnrestricted,
-                title = "Sin ahorro de batería",
-                hint = "Acepta el aviso para que ScudoDNS pueda funcionar en segundo plano.",
-                action = "Permitir",
-                onAction = { SystemShortcuts.battery(ctx) },
-                extra = if (state.isXiaomi) ("Ajuste de Xiaomi" to { SystemShortcuts.xiaomiBattery(ctx); Unit }) else null,
-            )
-            if (state.isXiaomi) Step(
-                done = state.autostartDone,
-                title = "Inicio automático",
-                hint = "Activa \"Inicio automático\" en la ficha de ScudoDNS y vuelve.",
-                action = "Abrir",
-                onAction = { SystemShortcuts.xiaomiAutostart(ctx) },
-                extra = "Ya lo he hecho" to onAutostartDone,
-            )
-            if (state.vpnAlwaysOn != null) Step(
-                done = state.vpnAlwaysOn,
-                title = "VPN siempre activada",
-                hint = "Toca el engranaje ⚙ junto a ScudoDNS y activa \"VPN siempre activada\".",
-                action = "Abrir",
-                onAction = { SystemShortcuts.vpn(ctx) },
-            ) else Step(
-                done = false,
-                title = "VPN siempre activada (recomendado)",
-                hint = "Toca el engranaje ⚙ junto a ScudoDNS y activa \"VPN siempre activada\".",
-                action = "Abrir",
-                onAction = { SystemShortcuts.vpn(ctx) },
-                unknown = true,
-            )
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.BatteryChargingFull, null, Modifier.size(18.dp), tint = cs.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
+                Text("Que no se cierre nunca", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text("${steps.count { it }} de ${steps.size}", style = MaterialTheme.typography.labelMedium,
+                    color = cs.onSurfaceVariant)
+                Spacer(Modifier.width(10.dp))
+                Text(if (open) "Ocultar" else "Ver", style = MaterialTheme.typography.labelMedium, color = cs.primary)
+            }
+            if (open) {
+                Spacer(Modifier.height(4.dp))
+                Text("Android puede cerrar ScudoDNS para ahorrar batería. Con estos ajustes se mantiene siempre encendida.",
+                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                Step(
+                    done = state.batteryUnrestricted,
+                    title = "Sin ahorro de batería",
+                    hint = "Acepta el aviso para que ScudoDNS pueda funcionar en segundo plano.",
+                    action = "Permitir",
+                    onAction = { SystemShortcuts.battery(ctx) },
+                    extra = if (state.isXiaomi) ("Ajuste de Xiaomi" to { SystemShortcuts.xiaomiBattery(ctx); Unit }) else null,
+                )
+                if (state.isXiaomi) Step(
+                    done = state.autostartDone,
+                    title = "Inicio automático",
+                    hint = "Activa \"Inicio automático\" en la ficha de ScudoDNS y vuelve.",
+                    action = "Abrir",
+                    onAction = { SystemShortcuts.xiaomiAutostart(ctx) },
+                    extra = "Ya lo he hecho" to onAutostartDone,
+                )
+                Step(
+                    done = state.vpnAlwaysOn == true,
+                    title = "VPN siempre activada",
+                    hint = "Toca el engranaje ⚙ junto a ScudoDNS y activa \"VPN siempre activada\".",
+                    action = "Abrir",
+                    onAction = { SystemShortcuts.vpn(ctx) },
+                    unknown = state.vpnAlwaysOn == null,
+                )
+                Spacer(Modifier.height(4.dp))
+                TextButton(onClick = onHide, contentPadding = PaddingValues(0.dp)) {
+                    Text("No mostrar más (vuelve desde Acerca de)", style = MaterialTheme.typography.labelMedium)
+                }
+            }
         }
     }
 }
@@ -146,7 +166,7 @@ private fun Step(
         Icon(
             if (done) Icons.Filled.CheckCircle else Icons.Outlined.Circle, null,
             Modifier.size(20.dp).padding(top = 1.dp),
-            tint = if (done) cs.primary else cs.onSecondaryContainer.copy(alpha = if (unknown) 0.4f else 0.7f),
+            tint = if (done) cs.primary else cs.onSurfaceVariant.copy(alpha = if (unknown) 0.5f else 0.9f),
         )
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {

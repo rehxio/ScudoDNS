@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Coffee
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,6 +80,13 @@ fun AboutSheet(vm: MainViewModel, onDismiss: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             UpdateSettings(vm)
             HorizontalDivider(color = cs.outlineVariant)
+            if (vm.keepAliveHidden.collectAsState().value) {
+                LinkRow(Icons.Filled.BatteryChargingFull, "Mostrar \"Que no se cierre nunca\" en Inicio") {
+                    vm.setKeepAliveHidden(false)
+                    onDismiss()
+                }
+                HorizontalDivider(color = cs.outlineVariant)
+            }
             LinkRow(Icons.Filled.Code, "Código fuente") { open(BuildConfig.REPO_URL) }
             HorizontalDivider(color = cs.outlineVariant)
             LinkRow(Icons.AutoMirrored.Filled.MenuBook, "Guía y ayuda") { open("${BuildConfig.REPO_URL}/wiki") }
