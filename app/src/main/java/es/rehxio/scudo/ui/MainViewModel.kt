@@ -23,16 +23,23 @@ import es.rehxio.scudo.update.UpdateState
 
 /**
  * Lo que hace falta para que Android no cierre la protección.
- * [vpnAlwaysOn] es null si no se puede saber; [autostartDone] solo se usa en Xiaomi, donde no hay forma
- * de comprobarlo y el usuario lo marca a mano.
+ * [androidBattery]: el ahorro de batería de Android está quitado (se comprueba solo).
+ * [vpnAlwaysOn]: null si no se puede saber. [oemDone]: pasos propios de la marca confirmados por el usuario.
  */
 data class KeepAlive(
-    val batteryUnrestricted: Boolean = true,
+    val androidBattery: Boolean = true,
     val vpnAlwaysOn: Boolean? = null,
-    val isXiaomi: Boolean = false,
-    val autostartDone: Boolean = true,
+    val oemDone: Map<String, Boolean> = emptyMap(),
 ) {
-    val complete get() = batteryUnrestricted && vpnAlwaysOn != false && (!isXiaomi || autostartDone)
+    private val checks: List<Boolean>
+        get() = (if (OemSettings.replacesAndroidBattery) emptyList() else listOf(androidBattery)) +
+            OemSettings.steps.map { oemDone[it.prefKey] == true } +
+            listOf(vpnAlwaysOn == true)
+    val doneCount get() = checks.count { it }
+    val totalCount get() = checks.size
+    /** Si no se puede saber lo de la VPN (Android 9 o anterior), no impide dar la tarjeta por terminada. */
+    val complete get() = (if (OemSettings.replacesAndroidBattery) true else androidBattery) &&
+        OemSettings.steps.all { oemDone[it.prefKey] == true } && vpnAlwaysOn != false
 }
 
 /** Estado de la pestaña Registro. */
@@ -77,12 +84,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun keepAliveStatus(): KeepAlive {
         val app = getApplication<Application>()
         val pm = app.getSystemService(PowerManager::class.java)
+        val prefs = app.getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
         return KeepAlive(
-            batteryUnrestricted = pm?.isIgnoringBatteryOptimizations(app.packageName) ?: true,
+            androidBattery = pm?.isIgnoringBatteryOptimizations(app.packageName) ?: true,
             vpnAlwaysOn = ScudoVpnService.alwaysOn(),
-            isXiaomi = SystemShortcuts.isXiaomi,
-            autostartDone = app.getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
-                .getBoolean("autostartDone", false),
+            oemDone = OemSettings.steps.associate { it.prefKey to prefs.getBoolean(it.prefKey, false) },
         )
     }
 
@@ -96,10 +102,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _keepAliveHidden.value = hidden
     }
 
-    /** En Xiaomi no se puede comprobar el inicio automático: el usuario confirma que lo ha activado. */
-    fun confirmAutostart() {
+    /** Los ajustes propios de la marca no se pueden comprobar: el usuario confirma que los ha hecho. */
+    fun confirmOemStep(prefKey: String) {
         getApplication<Application>().getSharedPreferences("scudo", android.content.Context.MODE_PRIVATE)
-            .edit().putBoolean("autostartDone", true).apply()
+            .edit().putBoolean(prefKey, true).apply()
         _keepAlive.value = keepAliveStatus()
     }
 

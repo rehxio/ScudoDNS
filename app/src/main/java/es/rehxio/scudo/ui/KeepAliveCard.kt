@@ -1,11 +1,5 @@
 package es.rehxio.scudo.ui
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,65 +33,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** Accesos directos a los ajustes del sistema que impiden que Android cierre la protección. */
-object SystemShortcuts {
-    val isXiaomi: Boolean
-        get() = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) ||
-            Build.BRAND.lowercase() in setOf("xiaomi", "redmi", "poco")
-
-    /** Abre el primero de los ajustes que exista en este móvil. */
-    private fun openFirst(ctx: Context, vararg intents: Intent): Boolean {
-        for (i in intents) {
-            if (runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return true
-        }
-        return false
-    }
-
-    private fun appDetails(ctx: Context) =
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}"))
-
-    /** Diálogo de Android "¿Permitir que ScudoDNS se ejecute en segundo plano?", solo para esta app. */
-    fun battery(ctx: Context) = openFirst(
-        ctx,
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")),
-        appDetails(ctx),
-    )
-
-    /** Ahorro de batería propio de Xiaomi (HyperOS/MIUI), directamente en la ficha de ScudoDNS. */
-    fun xiaomiBattery(ctx: Context) = openFirst(
-        ctx,
-        Intent("miui.intent.action.HIDDEN_APPS_CONFIG_ACTIVITY")
-            .putExtra("package_name", ctx.packageName)
-            .putExtra("package_label", "ScudoDNS"),
-        appDetails(ctx),
-    )
-
-    /** En Xiaomi, la ficha de la app tiene el interruptor "Inicio automático" arriba del todo. */
-    fun xiaomiAutostart(ctx: Context) = openFirst(
-        ctx,
-        appDetails(ctx),
-        Intent().setComponent(ComponentName("com.miui.securitycenter",
-            "com.miui.permcenter.autostart.AutoStartManagementActivity")),
-    )
-
-    /** Lista de VPN de Android: Android no deja abrir directamente la ficha de una VPN concreta. */
-    fun vpn(ctx: Context) = openFirst(ctx, Intent(Settings.ACTION_VPN_SETTINGS), Intent(Settings.ACTION_WIRELESS_SETTINGS))
-}
-
 /**
  * Pasos para que la protección no se cierre nunca. Plegada por defecto en una sola línea con el
  * progreso; al tocarla se despliegan los pasos. Se puede ocultar para siempre (vuelve desde Acerca de).
  */
 @Composable
-fun KeepAliveCard(state: KeepAlive, onAutostartDone: () -> Unit, onHide: () -> Unit) {
+fun KeepAliveCard(state: KeepAlive, onConfirm: (String) -> Unit, onHide: () -> Unit) {
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
     var open by remember { mutableStateOf(false) }
-    val steps = listOfNotNull(
-        state.batteryUnrestricted,
-        if (state.isXiaomi) state.autostartDone else null,
-        state.vpnAlwaysOn ?: false,
-    )
     Card(
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = cs.surfaceContainerLow),
@@ -108,37 +52,40 @@ fun KeepAliveCard(state: KeepAlive, onAutostartDone: () -> Unit, onHide: () -> U
                 Icon(Icons.Filled.BatteryChargingFull, null, Modifier.size(18.dp), tint = cs.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
                 Text("Que no se cierre nunca", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text("${steps.count { it }} de ${steps.size}", style = MaterialTheme.typography.labelMedium,
+                Text("${state.doneCount} de ${state.totalCount}", style = MaterialTheme.typography.labelMedium,
                     color = cs.onSurfaceVariant)
                 Spacer(Modifier.width(10.dp))
                 Text(if (open) "Ocultar" else "Ver", style = MaterialTheme.typography.labelMedium, color = cs.primary)
             }
             if (open) {
                 Spacer(Modifier.height(4.dp))
-                Text("Android puede cerrar ScudoDNS para ahorrar batería. Con estos ajustes se mantiene siempre encendida.",
-                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
-                Step(
-                    done = state.batteryUnrestricted,
+                Text(
+                    "Android puede cerrar ScudoDNS para ahorrar batería. Con estos ajustes se mantiene siempre encendida." +
+                        (OemSettings.brand.label.takeIf { it.isNotEmpty() }
+                            ?.let { " $it añade ajustes propios: no dejan comprobarlos, así que márcalos al terminar." } ?: ""),
+                    style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,
+                )
+                if (!OemSettings.replacesAndroidBattery) Step(
+                    done = state.androidBattery,
                     title = "Sin ahorro de batería",
                     hint = "Acepta el aviso para que ScudoDNS pueda funcionar en segundo plano.",
                     action = "Permitir",
-                    onAction = { SystemShortcuts.battery(ctx) },
-                    extra = if (state.isXiaomi) ("Ajuste de Xiaomi" to { SystemShortcuts.xiaomiBattery(ctx); Unit }) else null,
+                    onAction = { OemSettings.androidBattery(ctx) },
                 )
-                if (state.isXiaomi) Step(
-                    done = state.autostartDone,
-                    title = "Inicio automático",
-                    hint = "Activa \"Inicio automático\" en la ficha de ScudoDNS y vuelve.",
+                for (step in OemSettings.steps) Step(
+                    done = state.oemDone[step.prefKey] == true,
+                    title = step.title,
+                    hint = step.hint,
                     action = "Abrir",
-                    onAction = { SystemShortcuts.xiaomiAutostart(ctx) },
-                    extra = "Ya lo he hecho" to onAutostartDone,
+                    onAction = { OemSettings.open(ctx, step) },
+                    extra = "Ya lo he hecho" to { onConfirm(step.prefKey) },
                 )
                 Step(
                     done = state.vpnAlwaysOn == true,
                     title = "VPN siempre activada",
                     hint = "Toca el engranaje ⚙ junto a ScudoDNS y activa \"VPN siempre activada\".",
                     action = "Abrir",
-                    onAction = { SystemShortcuts.vpn(ctx) },
+                    onAction = { OemSettings.vpn(ctx) },
                     unknown = state.vpnAlwaysOn == null,
                 )
                 Spacer(Modifier.height(4.dp))

@@ -34,7 +34,14 @@ Si no, el navegador resuelve los nombres por su cuenta y se salta el filtro.
 ScudoDNS se mantiene como servicio en primer plano (verás una notificación discreta con el botón **Pausar**) y se vuelve a encender sola al reiniciar. Para pausarla o reanudarla al momento, añade el botón **ScudoDNS** a los ajustes rápidos (desliza desde arriba, pulsa el lápiz de editar y arrástralo al panel). Aun así, algunos fabricantes cierran apps en segundo plano de forma agresiva. Si la protección se apaga sola, haz esto (en la pantalla de Inicio, la tarjeta «Que no se cierre nunca» tiene un acceso directo para cada paso y los marca como hechos):
 
 - **VPN siempre activada**: *Ajustes → Redes → VPN → ScudoDNS → engranaje → VPN siempre activada*. Así arranca sola al encender el móvil.
-- **Batería sin restricciones** (Xiaomi, Samsung, Huawei, Oppo): *Ajustes → Apps → ScudoDNS → Ahorro de batería → Sin restricciones*. Evita que el sistema cierre la app.
+- **Batería sin restricciones**: acepta el aviso de Android desde la tarjeta. Evita que el sistema cierre la app.
+- **Ajustes propios de la marca** (la tarjeta muestra solo los de tu móvil):
+  - *Xiaomi / Redmi / POCO*: ahorro de batería de ScudoDNS en «Sin restricciones» y ScudoDNS activado en «Autoinicio en segundo plano».
+  - *Huawei / Honor*: Ajustes → Batería → Inicio de aplicaciones → ScudoDNS → desactiva «Gestionar automáticamente» y activa las tres opciones.
+  - *OPPO / realme / OnePlus*: ficha de ScudoDNS → Uso de la batería → «Permitir actividad en segundo plano» e «Inicio automático».
+  - *vivo / iQOO*: Ajustes → Batería → «Alto consumo en segundo plano» → ScudoDNS, e «Inicio automático».
+  - *Samsung*: Ajustes → Batería → Límites de uso en segundo plano → «Apps nunca en suspensión» → añade ScudoDNS.
+  - Más detalles por marca en [dontkillmyapp.com](https://dontkillmyapp.com).
 
 ## Actualizar
 

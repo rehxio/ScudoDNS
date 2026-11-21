@@ -1,5 +1,21 @@
 # Historial de cambios
 
+## 0.9.1
+- Xiaomi: el paso de inicio automático abre directamente la lista **«Autoinicio en segundo plano»**, donde está en HyperOS 3 (antes abría la ficha de la app).
+
+## 0.9.0
+- **«Que no se cierre nunca» para más marcas.** Además del ahorro de batería de Android, la tarjeta muestra los ajustes propios de cada fabricante, con acceso directo a su pantalla:
+  - **Xiaomi / Redmi / POCO**: ahorro de batería de HyperOS/MIUI e inicio automático.
+  - **Huawei / Honor**: «Inicio de aplicaciones» (gestión manual, inicio automático, inicio secundario y ejecución en segundo plano).
+  - **OPPO / realme / OnePlus**: permitir actividad en segundo plano e inicio automático.
+  - **vivo / iQOO**: alto consumo en segundo plano e inicio automático.
+  - **Samsung**: «Apps nunca en suspensión».
+  - **ASUS, Meizu y LeEco**: inicio automático o permisos en segundo plano.
+- Las marcas no dejan que las apps comprueben esos ajustes, así que se marcan con «Ya lo he hecho». Si la pantalla exacta no existe en tu versión, se abre la ficha de ScudoDNS.
+
+## 0.8.2
+- En Xiaomi, el paso **«Sin ahorro de batería»** abre directamente el ahorro de batería de ScudoDNS en HyperOS/MIUI y se marca con «Ya lo he hecho». Xiaomi usa su propio ajuste, independiente del de Android, y no permite que las apps lo comprueben, por eso antes no se marcaba aunque estuviera en «Sin restricciones».
+
 ## 0.8.1
 - La tarjeta **«Que no se cierre nunca»** ocupa ahora una sola línea con el progreso («1 de 3») y se despliega al tocarla.
 - Se puede ocultar con **«No mostrar más»**; vuelve a aparecer desde *Acerca de*.

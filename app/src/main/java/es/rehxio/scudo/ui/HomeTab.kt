@@ -89,7 +89,7 @@ fun HomeTab(vm: MainViewModel, onToggle: (Boolean) -> Unit, modifier: Modifier, 
         item { UpdateCard(vm) }
         privateDns?.let { name -> if (running) item { PrivateDnsWarning(name) } }
         if (running && !keepAlive.complete && !keepAliveHidden) item {
-            KeepAliveCard(keepAlive, onAutostartDone = vm::confirmAutostart, onHide = { vm.setKeepAliveHidden(true) })
+            KeepAliveCard(keepAlive, onConfirm = vm::confirmOemStep, onHide = { vm.setKeepAliveHidden(true) })
         }
         if (running) item { DiagCard(diag) }
         item {
